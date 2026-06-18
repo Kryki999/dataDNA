@@ -21,6 +21,7 @@ import {
   updateLead,
 } from "@/lib/actions/leads";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { leads } from "@/lib/db/schema";
 
 type Lead = typeof leads.$inferSelect;
@@ -34,9 +35,9 @@ type LeadDrawerProps = {
 };
 
 const TEMPERATURES = [
-  { value: "cold" as const, label: "Zimny", className: "border-sky-500/50 text-sky-300" },
-  { value: "warm" as const, label: "Ciepły", className: "border-amber-500/50 text-amber-300" },
-  { value: "hot" as const, label: "Gorący", className: "border-rose-500/50 text-rose-300" },
+  { value: "cold" as const, label: "Zimny", className: "border-sky-300 bg-sky-50 text-sky-700" },
+  { value: "warm" as const, label: "Ciepły", className: "border-amber-300 bg-amber-50 text-amber-700" },
+  { value: "hot" as const, label: "Gorący", className: "border-rose-300 bg-rose-50 text-rose-700" },
 ];
 
 export function LeadDrawer(props: LeadDrawerProps) {
@@ -56,6 +57,7 @@ function LeadDrawerForm({
   onUpdated,
   onDeleted,
 }: LeadDrawerProps) {
+  const isMobile = useIsMobile();
   const [name, setName] = useState(lead?.name ?? "");
   const [company, setCompany] = useState(lead?.company ?? "");
   const [phone, setPhone] = useState(lead?.phone ?? "");
@@ -146,7 +148,15 @@ function LeadDrawerForm({
   }
 
   return (
-    <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+    <SheetContent
+      side={isMobile ? "bottom" : "right"}
+      className={cn(
+        "overflow-y-auto",
+        isMobile
+          ? "max-h-[92dvh] w-full rounded-t-2xl pb-[env(safe-area-inset-bottom)]"
+          : "w-full sm:max-w-md",
+      )}
+    >
       <SheetHeader>
         <SheetTitle>{lead ? "Edytuj kontakt" : "Nowy kontakt"}</SheetTitle>
       </SheetHeader>
@@ -162,7 +172,7 @@ function LeadDrawerForm({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className={cn("grid gap-3", isMobile ? "grid-cols-1" : "grid-cols-2")}>
           <div className="space-y-2">
             <Label htmlFor="company">Firma</Label>
             <Input
@@ -238,8 +248,12 @@ function LeadDrawerForm({
           />
         </div>
 
-        <div className="flex flex-col gap-2 pt-2">
-          <Button onClick={handleSave} disabled={isPending || !name.trim()}>
+        <div className="flex flex-col gap-2 pt-2 pb-2">
+          <Button
+            onClick={handleSave}
+            disabled={isPending || !name.trim()}
+            className="min-h-11"
+          >
             Zapisz
           </Button>
           {lead ? (
@@ -248,7 +262,7 @@ function LeadDrawerForm({
                 variant="secondary"
                 onClick={handleLogCall}
                 disabled={isPending}
-                className="bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+                className="min-h-11"
               >
                 Odnotuj call
               </Button>

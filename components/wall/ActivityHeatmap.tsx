@@ -10,24 +10,28 @@ import { formatWarsawDate } from "@/lib/timezone";
 import { getIntensityLevel } from "@/lib/constants";
 
 const INTENSITY_CLASSES = [
-  "bg-zinc-800/80",
-  "bg-emerald-900/80",
-  "bg-emerald-700/90",
-  "bg-emerald-500",
-  "bg-emerald-400",
-  "bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.8)]",
+  "bg-muted",
+  "bg-primary/15",
+  "bg-primary/30",
+  "bg-primary/50",
+  "bg-primary/70",
+  "bg-primary",
 ];
 
 type ActivityHeatmapProps = {
   days: Record<string, number>;
   currentStreak: number;
   longestStreak: number;
+  compact?: boolean;
+  embedded?: boolean;
 };
 
 export function ActivityHeatmap({
   days,
   currentStreak,
   longestStreak,
+  compact = false,
+  embedded = false,
 }: ActivityHeatmapProps) {
   const keys = Object.keys(days).sort();
   const weeks: string[][] = [];
@@ -50,43 +54,57 @@ export function ActivityHeatmap({
     weeks.push(currentWeek);
   }
 
+  const visibleWeeks = compact ? weeks.slice(-20) : weeks;
+
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">The Wall</h2>
-          <p className="text-sm text-muted-foreground">
-            Ciągłość outreachu — nie przerwij streaka.
-          </p>
-        </div>
-        <div className="flex gap-6">
-          <div className="text-right">
-            <p className="text-3xl font-bold text-emerald-400 tabular-nums">
-              {currentStreak}
-            </p>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Streak
-            </p>
+      {!embedded ? (
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-tight">The Wall</h2>
+            <p className="text-sm text-muted-foreground">Nie przerwij streaka.</p>
           </div>
-          <div className="text-right">
-            <p className="text-3xl font-bold tabular-nums">{longestStreak}</p>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Rekord
-            </p>
+          <div className="flex shrink-0 gap-6">
+            <div className="text-right">
+              <p className="text-2xl font-semibold tabular-nums sm:text-3xl">
+                {currentStreak}
+              </p>
+              <p className="text-xs text-muted-foreground">Streak</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-semibold tabular-nums sm:text-3xl">
+                {longestStreak}
+              </p>
+              <p className="text-xs text-muted-foreground">Rekord</p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex justify-end gap-6">
+          <div className="text-right">
+            <p className="text-xl font-semibold tabular-nums">{currentStreak}</p>
+            <p className="text-xs text-muted-foreground">Streak</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xl font-semibold tabular-nums">{longestStreak}</p>
+            <p className="text-xs text-muted-foreground">Rekord</p>
+          </div>
+        </div>
+      )}
 
-      <div className="overflow-x-auto rounded-xl border border-border/60 bg-card/40 p-4">
-        <div className="flex gap-1 min-w-max">
-          {weeks.map((week, weekIndex) => (
+      <div className="overflow-x-auto rounded-lg border bg-muted/30 p-4 [-webkit-overflow-scrolling:touch]">
+        <p className="mb-2 text-xs text-muted-foreground md:hidden">
+          Przesuń w bok →
+        </p>
+        <div className="flex min-w-max gap-1">
+          {visibleWeeks.map((week, weekIndex) => (
             <div key={weekIndex} className="flex flex-col gap-1">
               {week.map((dateKey, dayIndex) => {
                 if (!dateKey) {
                   return (
                     <div
                       key={`empty-${weekIndex}-${dayIndex}`}
-                      className="h-3 w-3 rounded-sm bg-transparent"
+                      className="size-3 rounded-sm bg-transparent"
                     />
                   );
                 }
@@ -96,7 +114,7 @@ export function ActivityHeatmap({
                   <Tooltip key={dateKey}>
                     <TooltipTrigger
                       className={cn(
-                        "block h-3 w-3 rounded-sm transition-transform hover:scale-125",
+                        "block size-3 rounded-sm transition-transform active:scale-125",
                         INTENSITY_CLASSES[level],
                       )}
                     >

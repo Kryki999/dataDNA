@@ -1,6 +1,6 @@
-# Selly — Sales & Reach Dashboard
+# DataDNA — Sales & Reach Dashboard
 
-Weekend MVP (Faza 1): cold calling, The Wall heatmap, reach metrics, Boss Fight (20k PLN).
+Weekend MVP (Faza 1): cold calling, The Wall heatmap, reach metrics, cel przychodu (20k PLN).
 
 ## Stack
 

@@ -8,7 +8,7 @@ export const stripeIntegration: IntegrationModule = {
     metricsUpdated: 0,
   }),
   handleWebhook: async ({ organizationId, payload }) => {
-    // Phase 2: map charge.succeeded to deals + Boss Fight
+    // Phase 2: map charge.succeeded to deals + revenue goal
     void organizationId;
     void payload;
   },

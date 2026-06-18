@@ -22,6 +22,9 @@ export function QuickReachForm() {
         metaClicks: Number(metaClicks) || 0,
       });
       setSaved(true);
+      setColdCalls("0");
+      setXImpressions("0");
+      setMetaClicks("0");
       setTimeout(() => setSaved(false), 2000);
     });
   }
@@ -29,7 +32,7 @@ export function QuickReachForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid gap-3 rounded-xl border border-border/60 bg-card/40 p-4 sm:grid-cols-4"
+      className="grid gap-4 rounded-lg border bg-muted/30 p-4 sm:grid-cols-2 lg:grid-cols-4"
     >
       <div className="space-y-2">
         <Label htmlFor="coldCalls">Telefony (+)</Label>
@@ -37,8 +40,10 @@ export function QuickReachForm() {
           id="coldCalls"
           type="number"
           min="0"
+          inputMode="numeric"
           value={coldCalls}
           onChange={(event) => setColdCalls(event.target.value)}
+          className="min-h-11"
         />
       </div>
       <div className="space-y-2">
@@ -47,8 +52,10 @@ export function QuickReachForm() {
           id="xImpressions"
           type="number"
           min="0"
+          inputMode="numeric"
           value={xImpressions}
           onChange={(event) => setXImpressions(event.target.value)}
+          className="min-h-11"
         />
       </div>
       <div className="space-y-2">
@@ -57,12 +64,14 @@ export function QuickReachForm() {
           id="metaClicks"
           type="number"
           min="0"
+          inputMode="numeric"
           value={metaClicks}
           onChange={(event) => setMetaClicks(event.target.value)}
+          className="min-h-11"
         />
       </div>
-      <div className="flex items-end">
-        <Button type="submit" disabled={isPending} className="w-full">
+      <div className="flex items-end sm:col-span-2 lg:col-span-1">
+        <Button type="submit" disabled={isPending} className="min-h-11 w-full">
           {saved ? "Zapisano!" : isPending ? "Zapis..." : "Loguj zasięg"}
         </Button>
       </div>

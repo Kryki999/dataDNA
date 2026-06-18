@@ -1,6 +1,7 @@
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { Dna } from "lucide-react";
 import { signIn } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,11 +42,20 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center px-4 py-16">
-      <Card className="w-full max-w-md border-border/60 bg-card/60">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-muted/40 px-4 py-8">
+      <div className="mb-8 flex items-center gap-2">
+        <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <Dna className="size-5" />
+        </div>
+        <div>
+          <p className="font-semibold leading-none">DataDNA</p>
+          <p className="text-sm text-muted-foreground">Sales & Reach</p>
+        </div>
+      </div>
+      <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Selly</CardTitle>
-          <CardDescription>Sales & Reach Dashboard — CEO access</CardDescription>
+          <CardTitle className="text-xl">Zaloguj się</CardTitle>
+          <CardDescription>CEO access only</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={loginAction} className="space-y-4">
@@ -74,10 +84,7 @@ export default async function LoginPage({
                 Nieprawidłowy email lub hasło.
               </p>
             ) : null}
-            <Button
-              type="submit"
-              className="w-full bg-emerald-500 text-black hover:bg-emerald-400"
-            >
+            <Button type="submit" className="w-full">
               Zaloguj
             </Button>
           </form>

@@ -33,17 +33,15 @@ export function ReachCounters({ summary }: ReachCountersProps) {
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       {items.map((item) => (
-        <Card key={item.label} className="border-border/60 bg-card/50">
+        <Card key={item.label}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {item.label}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold tabular-nums text-emerald-400">
-              {item.today}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-3xl font-semibold tabular-nums">{item.today}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
               Tydzień: {item.week}
             </p>
           </CardContent>
