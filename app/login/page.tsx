@@ -42,17 +42,17 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-muted/40 px-4 py-8">
-      <div className="mb-8 flex items-center gap-2">
-        <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-8">
+      <div className="mb-8 flex items-center gap-3">
+        <div className="flex size-10 items-center justify-center rounded-lg border border-primary/30 bg-primary/15 text-primary shadow-[0_0_24px_oklch(0.78_0.19_155/0.25)]">
           <Dna className="size-5" />
         </div>
         <div>
           <p className="font-semibold leading-none">DataDNA</p>
-          <p className="text-sm text-muted-foreground">Sales & Reach</p>
+          <p className="text-sm text-muted-foreground">Sales & Reach Terminal</p>
         </div>
       </div>
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-sm border-border/80 bg-card/80">
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Zaloguj się</CardTitle>
           <CardDescription>CEO access only</CardDescription>
@@ -67,6 +67,7 @@ export default async function LoginPage({
                 type="email"
                 required
                 autoComplete="email"
+                className="bg-background/60"
               />
             </div>
             <div className="space-y-2">
@@ -77,6 +78,7 @@ export default async function LoginPage({
                 type="password"
                 required
                 autoComplete="current-password"
+                className="bg-background/60"
               />
             </div>
             {params.error ? (
@@ -84,7 +86,7 @@ export default async function LoginPage({
                 Nieprawidłowy email lub hasło.
               </p>
             ) : null}
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full shadow-[0_0_20px_oklch(0.78_0.19_155/0.2)]">
               Zaloguj
             </Button>
           </form>

@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Flame, Phone, Target, TrendingUp } from "lucide-react";
+import { Flame, Phone, Radio, Target, TrendingUp } from "lucide-react";
 
 type DnaStatsCardsProps = {
   streak: number;
@@ -19,6 +19,7 @@ type DnaStatsCardsProps = {
   revenuePercent: number;
   callsToday: number;
   callsWeek: number;
+  allTimeReach: number;
 };
 
 export function DnaStatsCards({
@@ -29,17 +30,18 @@ export function DnaStatsCards({
   revenuePercent,
   callsToday,
   callsWeek,
+  allTimeReach,
 }: DnaStatsCardsProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
+    <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:border-border/80 *:data-[slot=card]:bg-card/80 *:data-[slot=card]:shadow-[inset_0_1px_0_0_oklch(1_0_0/0.04)] lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Streak outreachu</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl font-semibold tabular-nums text-[oklch(0.78_0.19_155)] @[250px]/card:text-3xl">
             {streak} dni
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">
+            <Badge variant="outline" className="border-primary/30 text-primary">
               <Flame />
               {longestStreak} rekord
             </Badge>
@@ -47,7 +49,7 @@ export function DnaStatsCards({
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Nie przerwij łańcucha <Flame className="size-4" />
+            Nie przerwij łańcucha <Flame className="size-4 text-primary" />
           </div>
           <div className="text-muted-foreground">The Wall — ciągłość akcji</div>
         </CardFooter>
@@ -81,11 +83,11 @@ export function DnaStatsCards({
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Telefony dziś</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl font-semibold tabular-nums text-[oklch(0.78_0.19_155)] @[250px]/card:text-3xl">
             {callsToday}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">
+            <Badge variant="outline" className="border-primary/30 text-primary">
               <Phone />
               tydzień {callsWeek}
             </Badge>
@@ -93,32 +95,30 @@ export function DnaStatsCards({
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Cold calling dzisiaj
+            Log Call — jeden klik
           </div>
-          <div className="text-muted-foreground">Ręczne logowanie w Zasięgach</div>
+          <div className="text-muted-foreground">Bez formularzy, instant +1</div>
         </CardFooter>
       </Card>
 
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Postęp celu</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {revenuePercent}%
+          <CardDescription>Zasięgi all-time</CardDescription>
+          <CardTitle className="text-2xl font-semibold tabular-nums text-[oklch(0.82_0.14_155)] @[250px]/card:text-3xl">
+            {allTimeReach.toLocaleString("pl-PL")}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">
-              <TrendingUp />
-              Przychód
+            <Badge variant="outline" className="border-[oklch(0.72_0.16_220/0.4)] text-[oklch(0.72_0.16_220)]">
+              <Radio />
+              skumulowane
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Pipeline revenue
+            Calls + X + Meta od dnia 1
           </div>
-          <div className="text-muted-foreground">
-            Zamknięte deale w tym okresie
-          </div>
+          <div className="text-muted-foreground">Historyczna suma absolutna</div>
         </CardFooter>
       </Card>
     </div>

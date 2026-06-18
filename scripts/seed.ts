@@ -3,16 +3,13 @@ import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
+import { resolveDatabaseConnectionString } from "../lib/db/connection-string";
 import { schema } from "../lib/db/schema";
 
 config({ path: ".env.local" });
 
 async function seed() {
-  const connectionString =
-    process.env.DATABASE_URL_DIRECT ?? process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is required");
-  }
+  const connectionString = resolveDatabaseConnectionString();
 
   const email = process.env.CEO_EMAIL;
   if (!email) {

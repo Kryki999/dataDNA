@@ -10,12 +10,12 @@ import { formatWarsawDate } from "@/lib/timezone";
 import { getIntensityLevel } from "@/lib/constants";
 
 const INTENSITY_CLASSES = [
-  "bg-muted",
-  "bg-primary/15",
-  "bg-primary/30",
-  "bg-primary/50",
-  "bg-primary/70",
-  "bg-primary",
+  "bg-zinc-900/80",
+  "bg-emerald-950/90 border border-emerald-900/40",
+  "bg-emerald-800/90",
+  "bg-emerald-500/85 shadow-[0_0_6px_oklch(0.78_0.19_155/0.35)]",
+  "bg-emerald-400/90 shadow-[0_0_10px_oklch(0.78_0.19_155/0.55)]",
+  "bg-emerald-300 shadow-[0_0_14px_oklch(0.82_0.14_155/0.75)]",
 ];
 
 type ActivityHeatmapProps = {
@@ -66,9 +66,9 @@ export function ActivityHeatmap({
           </div>
           <div className="flex shrink-0 gap-6">
             <div className="text-right">
-              <p className="text-2xl font-semibold tabular-nums sm:text-3xl">
-                {currentStreak}
-              </p>
+            <p className="text-2xl font-semibold tabular-nums text-primary sm:text-3xl">
+              {currentStreak}
+            </p>
               <p className="text-xs text-muted-foreground">Streak</p>
             </div>
             <div className="text-right">
@@ -82,7 +82,7 @@ export function ActivityHeatmap({
       ) : (
         <div className="flex justify-end gap-6">
           <div className="text-right">
-            <p className="text-xl font-semibold tabular-nums">{currentStreak}</p>
+            <p className="text-xl font-semibold tabular-nums text-primary">{currentStreak}</p>
             <p className="text-xs text-muted-foreground">Streak</p>
           </div>
           <div className="text-right">
@@ -92,7 +92,7 @@ export function ActivityHeatmap({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border bg-muted/30 p-4 [-webkit-overflow-scrolling:touch]">
+      <div className="overflow-x-auto rounded-lg border border-border/80 bg-zinc-950/50 p-4 [-webkit-overflow-scrolling:touch]">
         <p className="mb-2 text-xs text-muted-foreground md:hidden">
           Przesuń w bok →
         </p>

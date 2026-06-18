@@ -2,7 +2,7 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { auth } from "@/lib/auth";
 import { getHeatmapData } from "@/lib/actions/activities";
 import { getLeads } from "@/lib/actions/leads";
-import { getReachSummary } from "@/lib/actions/reach";
+import { getReachSummary, getReachTimeSeries } from "@/lib/actions/reach";
 import { getRevenueProgress } from "@/lib/actions/deals";
 import { redirect } from "next/navigation";
 
@@ -12,10 +12,11 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [heatmap, leads, reach, revenue] = await Promise.all([
+  const [heatmap, leads, reach, reachSeries, revenue] = await Promise.all([
     getHeatmapData(),
     getLeads(),
     getReachSummary(),
+    getReachTimeSeries(),
     getRevenueProgress(),
   ]);
 
@@ -28,6 +29,7 @@ export default async function DashboardPage() {
       heatmap={heatmap}
       leads={leads}
       reach={reach}
+      reachSeries={reachSeries}
       revenue={revenue}
     />
   );

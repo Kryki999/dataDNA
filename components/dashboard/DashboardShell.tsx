@@ -5,14 +5,10 @@ import { SiteHeader } from "@/components/site-header";
 import { DashboardProvider } from "@/components/dashboard/dashboard-provider";
 import { DashboardViews } from "@/components/dashboard/dashboard-views";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import type { ReachDay, ReachSummary } from "@/lib/types/reach";
 import type { leads } from "@/lib/db/schema";
 
 type Lead = typeof leads.$inferSelect;
-
-type ReachSummary = {
-  today: { coldCalls: number; xImpressions: number; metaClicks: number };
-  week: { coldCalls: number; xImpressions: number; metaClicks: number };
-};
 
 type DashboardShellProps = {
   user: { name: string; email: string };
@@ -22,6 +18,7 @@ type DashboardShellProps = {
   };
   leads: Lead[];
   reach: ReachSummary;
+  reachSeries: ReachDay[];
   revenue: { total: number; goal: number; percent: number };
 };
 
@@ -30,6 +27,7 @@ export function DashboardShell({
   heatmap,
   leads,
   reach,
+  reachSeries,
   revenue,
 }: DashboardShellProps) {
   return (
@@ -49,6 +47,7 @@ export function DashboardShell({
             heatmap={heatmap}
             leads={leads}
             reach={reach}
+            reachSeries={reachSeries}
             revenue={revenue}
           />
         </SidebarInset>

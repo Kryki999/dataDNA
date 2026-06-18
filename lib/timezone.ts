@@ -69,3 +69,7 @@ export function getDateKeysBetween(startKey: string, endKey: string): string[] {
 export function getPreviousDateKey(dateKey: string): string {
   return toWarsawDateKey(subDays(parseISO(dateKey), 1));
 }
+
+export function getDateKeyDaysAgo(daysAgo: number, reference = new Date()): string {
+  return toWarsawDateKey(subDays(reference, daysAgo));
+}

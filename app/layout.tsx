@@ -33,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="pl"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-dvh flex flex-col bg-background text-foreground supports-[padding:max(0px)]:pb-[env(safe-area-inset-bottom)]">

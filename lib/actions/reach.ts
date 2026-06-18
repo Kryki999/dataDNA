@@ -1,10 +1,12 @@
 "use server";
 
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { activityLogs, reachMetrics } from "@/lib/db/schema";
+import { getCurrentStreak } from "@/lib/actions/activities";
 import { getCurrentOrganizationId } from "@/lib/tenant";
+import type { ReachDay, ReachSummary } from "@/lib/types/reach";
 import {
   getTodayDateKey,
   getWeekDateKeys,
@@ -97,6 +99,25 @@ async function upsertReachForToday(
       });
     }
   }
+
+  return { coldCalls, xImpressions, metaClicks };
+}
+
+export async function logQuickCall() {
+  const organizationId = await getCurrentOrganizationId();
+  const totals = await upsertReachForToday(
+    organizationId,
+    { coldCalls: 1 },
+    "add",
+  );
+  revalidatePath("/");
+
+  const streak = await getCurrentStreak();
+
+  return {
+    callsToday: totals.coldCalls,
+    streak,
+  };
 }
 
 export async function logReachMetrics(input: ReachInput) {
@@ -105,7 +126,23 @@ export async function logReachMetrics(input: ReachInput) {
   revalidatePath("/");
 }
 
-export async function getReachSummary() {
+function toReachTotals(row: {
+  coldCalls: number | string;
+  xImpressions: number | string;
+  metaClicks: number | string;
+}) {
+  const coldCalls = Number(row.coldCalls);
+  const xImpressions = Number(row.xImpressions);
+  const metaClicks = Number(row.metaClicks);
+  return {
+    coldCalls,
+    xImpressions,
+    metaClicks,
+    total: coldCalls + xImpressions + metaClicks,
+  };
+}
+
+export async function getReachSummary(): Promise<ReachSummary> {
   const organizationId = await getCurrentOrganizationId();
   const todayKey = getTodayDateKey();
   const weekKeys = getWeekDateKeys();
@@ -121,7 +158,7 @@ export async function getReachSummary() {
     )
     .limit(1);
 
-  const weekRows = await db
+  const [weekRow] = await db
     .select({
       coldCalls: sql<number>`coalesce(sum(${reachMetrics.coldCalls}), 0)`,
       xImpressions: sql<number>`coalesce(sum(${reachMetrics.xImpressions}), 0)`,
@@ -135,24 +172,54 @@ export async function getReachSummary() {
       ),
     );
 
-  const week = weekRows[0] ?? {
+  const [allTimeRow] = await db
+    .select({
+      coldCalls: sql<number>`coalesce(sum(${reachMetrics.coldCalls}), 0)`,
+      xImpressions: sql<number>`coalesce(sum(${reachMetrics.xImpressions}), 0)`,
+      metaClicks: sql<number>`coalesce(sum(${reachMetrics.metaClicks}), 0)`,
+    })
+    .from(reachMetrics)
+    .where(eq(reachMetrics.organizationId, organizationId));
+
+  const week = weekRow ?? { coldCalls: 0, xImpressions: 0, metaClicks: 0 };
+  const allTime = allTimeRow ?? {
     coldCalls: 0,
     xImpressions: 0,
     metaClicks: 0,
   };
 
   return {
-    today: {
+    today: toReachTotals({
       coldCalls: todayRow?.coldCalls ?? 0,
       xImpressions: todayRow?.xImpressions ?? 0,
       metaClicks: todayRow?.metaClicks ?? 0,
-    },
-    week: {
-      coldCalls: Number(week.coldCalls),
-      xImpressions: Number(week.xImpressions),
-      metaClicks: Number(week.metaClicks),
-    },
+    }),
+    week: toReachTotals(week),
+    allTime: toReachTotals(allTime),
   };
+}
+
+export async function getReachTimeSeries(): Promise<ReachDay[]> {
+  const organizationId = await getCurrentOrganizationId();
+
+  const rows = await db
+    .select({
+      dateKey: reachMetrics.dateKey,
+      coldCalls: reachMetrics.coldCalls,
+      xImpressions: reachMetrics.xImpressions,
+      metaClicks: reachMetrics.metaClicks,
+    })
+    .from(reachMetrics)
+    .where(eq(reachMetrics.organizationId, organizationId))
+    .orderBy(asc(reachMetrics.dateKey));
+
+  return rows.map((row) => ({
+    date: row.dateKey,
+    coldCalls: row.coldCalls,
+    xImpressions: row.xImpressions,
+    metaClicks: row.metaClicks,
+    total: row.coldCalls + row.xImpressions + row.metaClicks,
+  }));
 }
 
 export async function getWeeklyPhoneCount() {

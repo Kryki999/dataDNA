@@ -50,7 +50,7 @@ export function RevenueGoalBar({ total, goal, percent }: RevenueGoalBarProps) {
   }
 
   return (
-    <Card>
+    <Card className="border-border/80 bg-card/80">
       <CardHeader>
         <CardDescription>Cel przychodu</CardDescription>
         <CardTitle className="text-2xl font-semibold tabular-nums">
@@ -70,7 +70,10 @@ export function RevenueGoalBar({ total, goal, percent }: RevenueGoalBarProps) {
           </span>
           <span className="font-medium tabular-nums">{percent}%</span>
         </div>
-        <Progress value={percent} className="h-2" />
+        <Progress
+          value={percent}
+          className="h-2 [&_[data-slot=progress-indicator]]:bg-primary [&_[data-slot=progress-indicator]]:shadow-[0_0_12px_oklch(0.78_0.19_155/0.55)]"
+        />
         <p className="text-xs text-muted-foreground">
           {Math.max(0, goal - total).toLocaleString("pl-PL")} PLN do celu
         </p>
