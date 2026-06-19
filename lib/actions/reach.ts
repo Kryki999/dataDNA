@@ -73,31 +73,31 @@ async function upsertReachForToday(
   }
 
   const now = new Date();
-  const activityRows: Array<{
+  const activityEntries: Array<{
     type: "cold_call" | "x_impression" | "meta_click";
     count: number;
   }> = [];
 
   if (input.coldCalls && input.coldCalls > 0) {
-    activityRows.push({ type: "cold_call", count: input.coldCalls });
+    activityEntries.push({ type: "cold_call", count: input.coldCalls });
   }
   if (input.xImpressions && input.xImpressions > 0) {
-    activityRows.push({ type: "x_impression", count: input.xImpressions });
+    activityEntries.push({ type: "x_impression", count: input.xImpressions });
   }
   if (input.metaClicks && input.metaClicks > 0) {
-    activityRows.push({ type: "meta_click", count: input.metaClicks });
+    activityEntries.push({ type: "meta_click", count: input.metaClicks });
   }
 
-  for (const row of activityRows) {
-    for (let i = 0; i < row.count; i += 1) {
-      await db.insert(activityLogs).values({
+  if (activityEntries.length > 0) {
+    await db.insert(activityLogs).values(
+      activityEntries.map(({ type, count }) => ({
         organizationId,
-        type: row.type,
-        source: "manual",
+        type,
+        source: "manual" as const,
         occurredAt: now,
-        metadata: { fromReachForm: true },
-      });
-    }
+        metadata: { fromReachForm: true, count, bulk: count > 1 },
+      })),
+    );
   }
 
   return { coldCalls, xImpressions, metaClicks };

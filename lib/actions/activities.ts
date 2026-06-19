@@ -25,6 +25,7 @@ export async function getHeatmapData() {
     .select({
       type: activityLogs.type,
       occurredAt: activityLogs.occurredAt,
+      metadata: activityLogs.metadata,
     })
     .from(activityLogs)
     .where(
@@ -39,7 +40,9 @@ export async function getHeatmapData() {
 
   for (const row of rows) {
     const key = toWarsawDateKey(row.occurredAt);
-    dayCounts[key] = (dayCounts[key] ?? 0) + 1;
+    const meta = row.metadata as { count?: number } | null;
+    const increment = meta?.count && meta.count > 0 ? meta.count : 1;
+    dayCounts[key] = (dayCounts[key] ?? 0) + increment;
 
     if (
       OUTREACH_ACTIVITY_TYPES.includes(
