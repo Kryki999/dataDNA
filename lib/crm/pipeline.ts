@@ -1,0 +1,50 @@
+import type { leads } from "@/lib/db/schema";
+
+export type Lead = typeof leads.$inferSelect;
+
+export type PipelineStageId =
+  | "new"
+  | "contact_made"
+  | "demo_sent"
+  | "negotiation"
+  | "won"
+  | "lost";
+
+export type LeadSourceId = "cold_call" | "x" | "meta" | "other";
+
+export const PIPELINE_COLUMNS = [
+  { id: "new" as const, label: "Nowy", color: "border-[#0055FF]/40" },
+  { id: "contact_made" as const, label: "Kontakt Nawiązany", color: "border-[#1E69FF]/40" },
+  { id: "demo_sent" as const, label: "Wysłane Demo/Oferta", color: "border-[#3B7CFF]/40" },
+  { id: "negotiation" as const, label: "Negocjacje", color: "border-[#5A90FF]/40" },
+] as const;
+
+export const ACTIVE_PIPELINE_STAGES = PIPELINE_COLUMNS.map((c) => c.id);
+
+export const ARCHIVE_STAGES: PipelineStageId[] = ["won", "lost"];
+
+export const PIPELINE_STAGE_LABELS: Record<PipelineStageId, string> = {
+  new: "Nowy",
+  contact_made: "Kontakt Nawiązany",
+  demo_sent: "Wysłane Demo/Oferta",
+  negotiation: "Negocjacje",
+  won: "Wygrany",
+  lost: "Przegrany",
+};
+
+export const LEAD_SOURCE_LABELS: Record<LeadSourceId, string> = {
+  cold_call: "Cold Call",
+  x: "X",
+  meta: "Meta Ads",
+  other: "Inne",
+};
+
+export function isActiveLead(lead: Pick<Lead, "pipelineStage">) {
+  return ACTIVE_PIPELINE_STAGES.includes(
+    lead.pipelineStage as (typeof ACTIVE_PIPELINE_STAGES)[number],
+  );
+}
+
+export function isArchivedLead(lead: Pick<Lead, "pipelineStage">) {
+  return ARCHIVE_STAGES.includes(lead.pipelineStage as PipelineStageId);
+}

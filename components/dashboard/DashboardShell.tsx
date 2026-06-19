@@ -5,10 +5,8 @@ import { SiteHeader } from "@/components/site-header";
 import { DashboardProvider } from "@/components/dashboard/dashboard-provider";
 import { DashboardViews } from "@/components/dashboard/dashboard-views";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import type { Lead } from "@/lib/crm/pipeline";
 import type { ReachDay, ReachSummary } from "@/lib/types/reach";
-import type { leads } from "@/lib/db/schema";
-
-type Lead = typeof leads.$inferSelect;
 
 type DashboardShellProps = {
   user: { name: string; email: string };
@@ -16,7 +14,7 @@ type DashboardShellProps = {
     days: Record<string, number>;
     streaks: { current: number; longest: number };
   };
-  leads: Lead[];
+  crm: { active: Lead[]; archived: Lead[] };
   reach: ReachSummary;
   reachSeries: ReachDay[];
   revenue: { total: number; goal: number; percent: number };
@@ -25,7 +23,7 @@ type DashboardShellProps = {
 export function DashboardShell({
   user,
   heatmap,
-  leads,
+  crm,
   reach,
   reachSeries,
   revenue,
@@ -45,7 +43,7 @@ export function DashboardShell({
           <SiteHeader />
           <DashboardViews
             heatmap={heatmap}
-            leads={leads}
+            crm={crm}
             reach={reach}
             reachSeries={reachSeries}
             revenue={revenue}

@@ -9,7 +9,8 @@ import {
 
 export type DashboardSection =
   | "overview"
-  | "calls"
+  | "crm"
+  | "archive"
   | "wall"
   | "reach"
   | "revenue";
@@ -53,7 +54,8 @@ export function useDashboard() {
 
 export const SECTION_LABELS: Record<DashboardSection, string> = {
   overview: "Przegląd",
-  calls: "Cold Calling",
+  crm: "CRM — Lejek",
+  archive: "Archiwum",
   wall: "The Wall",
   reach: "Zasięgi",
   revenue: "Cel przychodu",

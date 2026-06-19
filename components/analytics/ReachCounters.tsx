@@ -14,7 +14,7 @@ export function ReachCounters({ summary }: ReachCountersProps) {
       today: summary.today.coldCalls,
       period: summary.week.coldCalls,
       periodLabel: "Tydzień",
-      accent: "text-[oklch(0.78_0.19_155)]",
+      accent: "text-primary",
     },
     {
       label: "X dziś",

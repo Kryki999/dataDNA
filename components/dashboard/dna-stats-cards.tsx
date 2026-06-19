@@ -37,7 +37,7 @@ export function DnaStatsCards({
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Streak outreachu</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums text-[oklch(0.78_0.19_155)] @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl font-semibold tabular-nums text-primary @[250px]/card:text-3xl">
             {streak} dni
           </CardTitle>
           <CardAction>
@@ -83,7 +83,7 @@ export function DnaStatsCards({
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Telefony dziś</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums text-[oklch(0.78_0.19_155)] @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl font-semibold tabular-nums text-primary @[250px]/card:text-3xl">
             {callsToday}
           </CardTitle>
           <CardAction>
@@ -104,7 +104,7 @@ export function DnaStatsCards({
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Zasięgi all-time</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums text-[oklch(0.82_0.14_155)] @[250px]/card:text-3xl">
+          <CardTitle className="text-2xl font-semibold tabular-nums text-[#7AA6FF] @[250px]/card:text-3xl">
             {allTimeReach.toLocaleString("pl-PL")}
           </CardTitle>
           <CardAction>

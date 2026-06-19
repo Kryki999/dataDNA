@@ -13,6 +13,7 @@ import { CirclePlus, Phone } from "lucide-react";
 export function NavMain({
   items,
   onQuickCreate,
+  quickCreateLabel = "Nowy klient",
 }: {
   items: {
     title: string;
@@ -21,6 +22,7 @@ export function NavMain({
     onClick?: () => void;
   }[];
   onQuickCreate?: () => void;
+  quickCreateLabel?: string;
 }) {
   return (
     <SidebarGroup>
@@ -28,23 +30,23 @@ export function NavMain({
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-2">
             <SidebarMenuButton
-              tooltip="Nowy kontakt"
+              tooltip={quickCreateLabel}
               className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
               onClick={onQuickCreate}
             >
               <CirclePlus />
-              <span>Nowy kontakt</span>
+              <span>{quickCreateLabel}</span>
             </SidebarMenuButton>
             <Button
               size="icon"
               className="size-8 shrink-0 group-data-[collapsible=icon]:opacity-0"
               variant="outline"
               onClick={() =>
-                items.find((i) => i.title === "Cold Calling")?.onClick?.()
+                items.find((i) => i.title.startsWith("CRM"))?.onClick?.()
               }
             >
               <Phone />
-              <span className="sr-only">Cold Calling</span>
+              <span className="sr-only">CRM</span>
             </Button>
           </SidebarMenuItem>
         </SidebarMenu>

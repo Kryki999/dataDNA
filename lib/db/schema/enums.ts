@@ -1,5 +1,19 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
+export const leadPipelineStageEnum = pgEnum("lead_pipeline_stage", [
+  "new",
+  "contact_made",
+  "demo_sent",
+  "negotiation",
+  "won",
+  "lost",
+]);
+export const leadSourceEnum = pgEnum("lead_source", [
+  "cold_call",
+  "x",
+  "meta",
+  "other",
+]);
 export const planEnum = pgEnum("plan", ["personal", "pro", "enterprise"]);
 export const userRoleEnum = pgEnum("user_role", ["owner", "admin", "member"]);
 export const temperatureEnum = pgEnum("temperature", ["cold", "warm", "hot"]);

@@ -44,7 +44,7 @@ export default async function LoginPage({
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-8">
       <div className="mb-8 flex items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-lg border border-primary/30 bg-primary/15 text-primary shadow-[0_0_24px_oklch(0.78_0.19_155/0.25)]">
+        <div className="flex size-10 items-center justify-center rounded-lg border border-primary/30 bg-primary/15 text-primary shadow-[0_0_24px_rgba(0,85,255,0.25)]">
           <Dna className="size-5" />
         </div>
         <div>
@@ -86,7 +86,7 @@ export default async function LoginPage({
                 Nieprawidłowy email lub hasło.
               </p>
             ) : null}
-            <Button type="submit" className="w-full shadow-[0_0_20px_oklch(0.78_0.19_155/0.2)]">
+            <Button type="submit" className="w-full shadow-[0_0_20px_rgba(0,85,255,0.2)]">
               Zaloguj
             </Button>
           </form>

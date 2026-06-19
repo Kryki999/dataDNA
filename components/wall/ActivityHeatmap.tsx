@@ -11,11 +11,11 @@ import { getIntensityLevel } from "@/lib/constants";
 
 const INTENSITY_CLASSES = [
   "bg-zinc-900/80",
-  "bg-emerald-950/90 border border-emerald-900/40",
-  "bg-emerald-800/90",
-  "bg-emerald-500/85 shadow-[0_0_6px_oklch(0.78_0.19_155/0.35)]",
-  "bg-emerald-400/90 shadow-[0_0_10px_oklch(0.78_0.19_155/0.55)]",
-  "bg-emerald-300 shadow-[0_0_14px_oklch(0.82_0.14_155/0.75)]",
+  "bg-[#0055FF]/15 border border-[#0055FF]/20",
+  "bg-[#0055FF]/35",
+  "bg-[#0055FF]/55 shadow-[0_0_6px_rgba(0,85,255,0.35)]",
+  "bg-[#1E69FF]/80 shadow-[0_0_10px_rgba(0,85,255,0.55)]",
+  "bg-[#3B7CFF] shadow-[0_0_14px_rgba(0,85,255,0.75)]",
 ];
 
 type ActivityHeatmapProps = {

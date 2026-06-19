@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import {
+  Archive,
   BarChart3,
   Dna,
   Grid3X3,
+  Kanban,
   LayoutDashboard,
-  Phone,
   Target,
 } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
@@ -35,7 +36,8 @@ const NAV_ITEMS: Array<{
   icon: React.ReactNode;
 }> = [
   { id: "overview", title: "Przegląd", icon: <LayoutDashboard /> },
-  { id: "calls", title: "Cold Calling", icon: <Phone /> },
+  { id: "crm", title: "CRM — Lejek", icon: <Kanban /> },
+  { id: "archive", title: "Archiwum", icon: <Archive /> },
   { id: "wall", title: "The Wall", icon: <Grid3X3 /> },
   { id: "reach", title: "Zasięgi", icon: <BarChart3 /> },
   { id: "revenue", title: "Cel przychodu", icon: <Target /> },
@@ -54,13 +56,13 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
               className="data-[slot=sidebar-menu-button]:p-1.5!"
               onClick={() => setSection("overview")}
             >
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_0_16px_rgba(0,85,255,0.35)]">
                 <Dna className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">DataDNA</span>
                 <span className="truncate text-xs text-muted-foreground">
-                  Sales & Reach
+                  Media DNA CRM
                 </span>
               </div>
             </SidebarMenuButton>
@@ -75,6 +77,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
             onClick: () => setSection(item.id),
           }))}
           onQuickCreate={openNewLead}
+          quickCreateLabel="Nowy klient"
         />
       </SidebarContent>
       <SidebarFooter>

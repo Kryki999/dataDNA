@@ -1,7 +1,7 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { auth } from "@/lib/auth";
 import { getHeatmapData } from "@/lib/actions/activities";
-import { getLeads } from "@/lib/actions/leads";
+import { getCrmLeads } from "@/lib/actions/leads";
 import { getReachSummary, getReachTimeSeries } from "@/lib/actions/reach";
 import { getRevenueProgress } from "@/lib/actions/deals";
 import { redirect } from "next/navigation";
@@ -12,9 +12,9 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [heatmap, leads, reach, reachSeries, revenue] = await Promise.all([
+  const [heatmap, crm, reach, reachSeries, revenue] = await Promise.all([
     getHeatmapData(),
-    getLeads(),
+    getCrmLeads(),
     getReachSummary(),
     getReachTimeSeries(),
     getRevenueProgress(),
@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     <DashboardShell
       user={{ name, email }}
       heatmap={heatmap}
-      leads={leads}
+      crm={crm}
       reach={reach}
       reachSeries={reachSeries}
       revenue={revenue}

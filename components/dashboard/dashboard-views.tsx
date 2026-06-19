@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
 import { ActivityHeatmap } from "@/components/wall/ActivityHeatmap";
-import { LeadList } from "@/components/calls/LeadList";
+import { ClientArchive } from "@/components/crm/ClientArchive";
+import { PipelineBoard } from "@/components/crm/PipelineBoard";
 import { ReachCounters } from "@/components/analytics/ReachCounters";
 import { QuickReachForm } from "@/components/analytics/QuickReachForm";
 import { RevenueGoalBar } from "@/components/analytics/RevenueGoalBar";
@@ -18,17 +18,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
+import type { Lead } from "@/lib/crm/pipeline";
 import type { ReachDay, ReachSummary } from "@/lib/types/reach";
-import type { leads } from "@/lib/db/schema";
-
-type Lead = typeof leads.$inferSelect;
 
 type DashboardViewsProps = {
   heatmap: {
     days: Record<string, number>;
     streaks: { current: number; longest: number };
   };
-  leads: Lead[];
+  crm: { active: Lead[]; archived: Lead[] };
   reach: ReachSummary;
   reachSeries: ReachDay[];
   revenue: { total: number; goal: number; percent: number };
@@ -36,7 +34,7 @@ type DashboardViewsProps = {
 
 export function DashboardViews({
   heatmap,
-  leads,
+  crm,
   reach: initialReach,
   reachSeries,
   revenue,
@@ -75,13 +73,14 @@ export function DashboardViews({
 
   const showStats = section === "overview" || section === "revenue";
   const showChart =
-    section === "overview" || section === "reach" || section === "calls";
+    section === "overview" || section === "reach" || section === "crm";
   const showWall = section === "overview" || section === "wall";
   const showRevenue = section === "overview" || section === "revenue";
   const showReach = section === "reach";
-  const showCalls = section === "overview" || section === "calls";
+  const showCrm = section === "crm";
+  const showArchive = section === "archive";
   const showLogCall =
-    section === "overview" || section === "calls" || section === "reach";
+    section === "overview" || section === "crm" || section === "reach";
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-2">
@@ -115,6 +114,21 @@ export function DashboardViews({
               series={reachSeries}
               allTimeTotal={reach.allTime.total}
             />
+          </div>
+        ) : null}
+
+        {showCrm ? (
+          <div className="px-4 lg:px-6">
+            <PipelineBoard
+              leads={crm.active}
+              onRegisterOpenNew={registerOpenNewLead}
+            />
+          </div>
+        ) : null}
+
+        {showArchive ? (
+          <div className="px-4 lg:px-6">
+            <ClientArchive leads={crm.archived} />
           </div>
         ) : null}
 
@@ -164,16 +178,6 @@ export function DashboardViews({
                 <QuickReachForm />
               </CardContent>
             </Card>
-          </div>
-        ) : null}
-
-        {showCalls ? (
-          <div className={cn("px-4 lg:px-6", section === "overview" && "hidden xl:block")}>
-            <LeadList
-              leads={leads}
-              embedded
-              onRegisterOpenNew={registerOpenNewLead}
-            />
           </div>
         ) : null}
       </div>

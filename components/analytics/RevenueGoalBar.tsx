@@ -72,7 +72,7 @@ export function RevenueGoalBar({ total, goal, percent }: RevenueGoalBarProps) {
         </div>
         <Progress
           value={percent}
-          className="h-2 [&_[data-slot=progress-indicator]]:bg-primary [&_[data-slot=progress-indicator]]:shadow-[0_0_12px_oklch(0.78_0.19_155/0.55)]"
+          className="h-2 [&_[data-slot=progress-indicator]]:bg-primary [&_[data-slot=progress-indicator]]:shadow-[0_0_12px_rgba(0,85,255,0.55)]"
         />
         <p className="text-xs text-muted-foreground">
           {Math.max(0, goal - total).toLocaleString("pl-PL")} PLN do celu

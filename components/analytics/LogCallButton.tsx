@@ -53,7 +53,7 @@ export function LogCallButton({
         onClick={handleLogCall}
         disabled={isPending}
         className={cn(
-          "h-14 w-full gap-2 bg-primary text-base font-semibold text-primary-foreground shadow-[0_0_24px_oklch(0.78_0.19_155/0.35)] hover:bg-primary/90",
+          "h-14 w-full gap-2 bg-primary text-base font-semibold text-primary-foreground shadow-[0_0_24px_rgba(0,85,255,0.35)] hover:bg-primary/90",
           className,
         )}
       >
@@ -73,13 +73,13 @@ export function LogCallButton({
       disabled={isPending}
       className={cn(
         "group relative flex w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-primary/30 bg-card px-6 py-10 transition-all",
-        "shadow-[0_0_40px_oklch(0.78_0.19_155/0.12)] hover:border-primary/60 hover:shadow-[0_0_48px_oklch(0.78_0.19_155/0.22)]",
+        "shadow-[0_0_40px_rgba(0,85,255,0.12)] hover:border-primary/60 hover:shadow-[0_0_48px_rgba(0,85,255,0.22)]",
         "active:scale-[0.99] disabled:opacity-60",
         className,
       )}
     >
       <div className="absolute inset-0 bg-linear-to-b from-primary/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-      <div className="relative flex size-16 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-primary shadow-[0_0_24px_oklch(0.78_0.19_155/0.35)]">
+      <div className="relative flex size-16 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-primary shadow-[0_0_24px_rgba(0,85,255,0.35)]">
         <Phone className="size-7" />
         <Plus className="absolute -right-0.5 -top-0.5 size-5 rounded-full bg-primary p-0.5 text-primary-foreground" />
       </div>
