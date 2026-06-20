@@ -19,12 +19,18 @@ declare module "next-auth" {
       email: string;
       organizationId: string;
       role: "owner" | "admin" | "member";
+      displayName?: string;
+      username?: string;
+      avatarUrl?: string | null;
     };
   }
 
   interface User {
     organizationId: string;
     role: "owner" | "admin" | "member";
+    displayName?: string | null;
+    username?: string | null;
+    avatarUrl?: string | null;
   }
 }
 
@@ -65,6 +71,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           organizationId: user.organizationId,
           role: user.role,
+          displayName: user.displayName,
+          username: user.username,
+          avatarUrl: user.avatarUrl,
         };
       },
     }),

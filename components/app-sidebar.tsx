@@ -1,17 +1,12 @@
 "use client";
 
-import * as React from "react";
-import {
-  Archive,
-  BarChart3,
-  Dna,
-  Grid3X3,
-  Kanban,
-  LayoutDashboard,
-  Target,
-} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Dna } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
+import { DASHBOARD_NAV } from "@/lib/dashboard-nav";
+import { useNewLead } from "@/components/dashboard/new-lead-provider";
 import {
   Sidebar,
   SidebarContent,
@@ -21,42 +16,30 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import {
-  useDashboard,
-  type DashboardSection,
-} from "@/components/dashboard/dashboard-provider";
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
-  user: { name: string; email: string };
+  user: { name: string; email: string; avatarUrl?: string | null };
 };
 
-const NAV_ITEMS: Array<{
-  id: DashboardSection;
-  title: string;
-  icon: React.ReactNode;
-}> = [
-  { id: "overview", title: "Przegląd", icon: <LayoutDashboard /> },
-  { id: "crm", title: "CRM — Lejek", icon: <Kanban /> },
-  { id: "archive", title: "Archiwum", icon: <Archive /> },
-  { id: "wall", title: "The Wall", icon: <Grid3X3 /> },
-  { id: "reach", title: "Zasięgi", icon: <BarChart3 /> },
-  { id: "revenue", title: "Cel przychodu", icon: <Target /> },
-];
-
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
-  const { section, setSection, openNewLead } = useDashboard();
+  const pathname = usePathname();
+  const { openNewLead } = useNewLead();
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar
+      collapsible="offcanvas"
+      className="border-r border-zinc-800 bg-zinc-950"
+      {...props}
+    >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
               className="data-[slot=sidebar-menu-button]:p-1.5!"
-              onClick={() => setSection("overview")}
+              render={<Link href="/profil" />}
             >
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_0_16px_rgba(0,85,255,0.35)]">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Dna className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
@@ -71,17 +54,25 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain
-          items={NAV_ITEMS.map((item) => ({
-            ...item,
-            isActive: section === item.id,
-            onClick: () => setSection(item.id),
+          items={DASHBOARD_NAV.map((item) => ({
+            title: item.title,
+            href: item.href,
+            icon: <item.icon className="size-4" />,
+            isActive:
+              pathname === item.href || pathname.startsWith(`${item.href}/`),
           }))}
           onQuickCreate={openNewLead}
           quickCreateLabel="Nowy klient"
         />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={{ ...user, avatar: "" }} />
+        <NavUser
+          user={{
+            name: user.name,
+            email: user.email,
+            avatar: user.avatarUrl ?? "",
+          }}
+        />
       </SidebarFooter>
     </Sidebar>
   );

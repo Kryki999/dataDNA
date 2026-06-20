@@ -1,7 +1,7 @@
 "use server";
 
 import { desc, eq, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidateDashboard } from "@/lib/revalidate";
 import { db } from "@/lib/db";
 import { activityLogs, deals } from "@/lib/db/schema";
 import { getCurrentOrganizationId } from "@/lib/tenant";
@@ -38,7 +38,7 @@ export async function closeDeal(input: DealInput) {
     metadata: { amountPln: input.amountPln },
   });
 
-  revalidatePath("/");
+  revalidateDashboard();
   return deal;
 }
 

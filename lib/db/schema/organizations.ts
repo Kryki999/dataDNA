@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { planEnum, userRoleEnum } from "./enums";
 
 export const organizations = pgTable("organizations", {
@@ -19,6 +19,11 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   role: userRoleEnum("role").notNull().default("owner"),
+  displayName: text("display_name"),
+  username: text("username").unique(),
+  bio: text("bio").notNull().default(""),
+  avatarUrl: text("avatar_url"),
+  profilePublic: boolean("profile_public").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

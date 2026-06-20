@@ -2,34 +2,21 @@
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
-import { DashboardProvider } from "@/components/dashboard/dashboard-provider";
-import { DashboardViews } from "@/components/dashboard/dashboard-views";
+import { NewLeadProvider } from "@/components/dashboard/new-lead-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import type { Lead } from "@/lib/crm/pipeline";
-import type { ReachDay, ReachSummary } from "@/lib/types/reach";
 
 type DashboardShellProps = {
-  user: { name: string; email: string };
-  heatmap: {
-    days: Record<string, number>;
-    streaks: { current: number; longest: number };
+  user: {
+    name: string;
+    email: string;
+    avatarUrl?: string | null;
   };
-  crm: { active: Lead[]; archived: Lead[] };
-  reach: ReachSummary;
-  reachSeries: ReachDay[];
-  revenue: { total: number; goal: number; percent: number };
+  children: React.ReactNode;
 };
 
-export function DashboardShell({
-  user,
-  heatmap,
-  crm,
-  reach,
-  reachSeries,
-  revenue,
-}: DashboardShellProps) {
+export function DashboardShell({ user, children }: DashboardShellProps) {
   return (
-    <DashboardProvider>
+    <NewLeadProvider>
       <SidebarProvider
         style={
           {
@@ -39,17 +26,11 @@ export function DashboardShell({
         }
       >
         <AppSidebar variant="inset" user={user} />
-        <SidebarInset>
+        <SidebarInset className="bg-zinc-950">
           <SiteHeader />
-          <DashboardViews
-            heatmap={heatmap}
-            crm={crm}
-            reach={reach}
-            reachSeries={reachSeries}
-            revenue={revenue}
-          />
+          <div className="flex-1">{children}</div>
         </SidebarInset>
       </SidebarProvider>
-    </DashboardProvider>
+    </NewLeadProvider>
   );
 }

@@ -20,6 +20,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import Link from "next/link";
 import { logoutAction } from "@/lib/actions/auth";
 import { EllipsisVertical, LogOut, UserRound } from "lucide-react";
 
@@ -86,9 +87,9 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem render={<Link href="/profil" />}>
                 <UserRound />
-                CEO Account
+                Profil
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

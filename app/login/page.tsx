@@ -28,7 +28,7 @@ export default async function LoginPage({
       await signIn("credentials", {
         email: formData.get("email"),
         password: formData.get("password"),
-        redirectTo: "/",
+        redirectTo: "/profil",
       });
     } catch (error) {
       if (isRedirectError(error)) {
@@ -55,7 +55,7 @@ export default async function LoginPage({
       <Card className="w-full max-w-sm border-border/80 bg-card/80">
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Zaloguj się</CardTitle>
-          <CardDescription>CEO access only</CardDescription>
+          <CardDescription>Konto utworzone przez seed</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={loginAction} className="space-y-4">

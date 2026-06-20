@@ -44,3 +44,13 @@ export const webhookStatusEnum = pgEnum("webhook_status", [
   "processed",
   "failed",
 ]);
+export const calendarEventStatusEnum = pgEnum("calendar_event_status", [
+  "pending",
+  "completed",
+  "cancelled",
+]);
+export const calendarEventSourceEnum = pgEnum("calendar_event_source", [
+  "crm",
+  "manual",
+  "archive_reactivation",
+]);

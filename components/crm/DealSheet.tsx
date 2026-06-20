@@ -32,6 +32,7 @@ import {
   updateLead,
   updateLeadStage,
 } from "@/lib/actions/leads";
+import { PREDEFINED_LEAD_TAGS } from "@/lib/constants";
 import {
   LEAD_SOURCE_LABELS,
   PIPELINE_STAGE_LABELS,
@@ -68,6 +69,8 @@ export function DealSheet({
   const [projectValue, setProjectValue] = useState("");
   const [source, setSource] = useState<LeadSourceId>("cold_call");
   const [stage, setStage] = useState<PipelineStageId>("new");
+  const [tags, setTags] = useState<string[]>([]);
+  const [followUpAt, setFollowUpAt] = useState("");
   const [notes, setNotes] = useState<LeadNote[]>([]);
   const [newNote, setNewNote] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -83,6 +86,12 @@ export function DealSheet({
     );
     setSource(lead?.source ?? "cold_call");
     setStage(lead?.pipelineStage ?? "new");
+    setTags(lead?.tags ?? []);
+    setFollowUpAt(
+      lead?.nextFollowUpAt
+        ? format(lead.nextFollowUpAt, "yyyy-MM-dd'T'HH:mm")
+        : "",
+    );
     setNewNote("");
 
     if (lead?.id) {
@@ -115,6 +124,8 @@ export function DealSheet({
       source,
       projectValuePln: projectValue ? Number(projectValue) : null,
       pipelineStage: stage,
+      tags,
+      nextFollowUpAt: followUpAt ? new Date(followUpAt) : null,
     };
 
     startTransition(async () => {
@@ -305,6 +316,40 @@ export function DealSheet({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="followUp">Follow-up</Label>
+                <Input
+                  id="followUp"
+                  type="datetime-local"
+                  value={followUpAt}
+                  onChange={(e) => setFollowUpAt(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Tagi</Label>
+                <div className="flex flex-wrap gap-2">
+                  {PREDEFINED_LEAD_TAGS.map((tag) => {
+                    const active = tags.includes(tag);
+                    return (
+                      <Button
+                        key={tag}
+                        type="button"
+                        size="sm"
+                        variant={active ? "default" : "outline"}
+                        onClick={() =>
+                          setTags((current) =>
+                            active
+                              ? current.filter((t) => t !== tag)
+                              : [...current, tag],
+                          )
+                        }
+                      >
+                        {tag}
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 

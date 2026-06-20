@@ -1,21 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Area, AreaChart, XAxis } from "recharts";
+import { Button } from "@/components/ui/button";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { ReachDay } from "@/lib/types/reach";
 import {
   buildReachChartData,
@@ -24,20 +17,18 @@ import {
   type ReachChannel,
   type ReachTimeRange,
 } from "@/lib/reach-chart";
+import { SECTION_LABEL, STAT_VALUE, FLAT_CONTAINER } from "@/lib/ui-patterns";
+import {
+  MINIMAL_AXIS_TICK,
+  MINIMAL_CHART_MARGIN,
+} from "@/components/charts/minimal-chart-theme";
 
 const chartConfig = {
   value: {
     label: "Skumulowane",
-    color: "var(--chart-1)",
+    color: "var(--primary)",
   },
 } satisfies ChartConfig;
-
-const CHANNEL_COLORS: Record<ReachChannel, string> = {
-  total: "var(--chart-4)",
-  coldCalls: "var(--chart-1)",
-  xImpressions: "var(--chart-2)",
-  metaClicks: "var(--chart-3)",
-};
 
 type ReachAnalyticsChartProps = {
   series: ReachDay[];
@@ -56,131 +47,102 @@ export function ReachAnalyticsChart({
     [series, range, channel],
   );
 
-  const strokeColor = CHANNEL_COLORS[channel];
+  const ticks =
+    chartData.length > 1
+      ? [chartData[0]?.label, chartData[chartData.length - 1]?.label].filter(
+          Boolean,
+        )
+      : chartData[0]?.label
+        ? [chartData[0].label]
+        : [];
 
   return (
-    <Card className="border-border/80 bg-card/80 shadow-[inset_0_1px_0_0_oklch(1_0_0/0.04)]">
-      <CardHeader className="gap-4 space-y-0">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <CardTitle>Analityka zasięgów</CardTitle>
-            <CardDescription>
-              Skumulowany wykres historyczny · all-time:{" "}
-              <span className="font-mono font-medium text-primary tabular-nums">
-                {allTimeTotal.toLocaleString("pl-PL")}
-              </span>
-            </CardDescription>
-          </div>
-        </div>
+    <section className="space-y-4">
+      <p className={SECTION_LABEL}>Zasięgi</p>
+      <p className={STAT_VALUE}>
+        {allTimeTotal.toLocaleString("pl-PL")}{" "}
+        <span className="text-base font-normal text-muted-foreground">
+          all-time
+        </span>
+      </p>
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <ToggleGroup
-            value={[range]}
-            onValueChange={(values) => {
-              const next = values[0] as ReachTimeRange | undefined;
-              if (next) setRange(next);
-            }}
-            variant="outline"
+      <div className="flex flex-wrap gap-2">
+        {(Object.keys(REACH_TIME_RANGE_LABELS) as ReachTimeRange[]).map(
+          (key) => (
+            <Button
+              key={key}
+              size="sm"
+              variant={range === key ? "default" : "ghost"}
+              onClick={() => setRange(key)}
+            >
+              {REACH_TIME_RANGE_LABELS[key]}
+            </Button>
+          ),
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {(Object.keys(REACH_CHANNEL_LABELS) as ReachChannel[]).map((key) => (
+          <Button
+            key={key}
             size="sm"
-            className="flex-wrap"
+            variant={channel === key ? "outline" : "ghost"}
+            onClick={() => setChannel(key)}
           >
-            {(Object.keys(REACH_TIME_RANGE_LABELS) as ReachTimeRange[]).map(
-              (key) => (
-                <ToggleGroupItem key={key} value={key}>
-                  {REACH_TIME_RANGE_LABELS[key]}
-                </ToggleGroupItem>
-              ),
-            )}
-          </ToggleGroup>
+            {REACH_CHANNEL_LABELS[key]}
+          </Button>
+        ))}
+      </div>
 
-          <ToggleGroup
-            value={[channel]}
-            onValueChange={(values) => {
-              const next = values[0] as ReachChannel | undefined;
-              if (next) setChannel(next);
-            }}
-            variant="outline"
-            size="sm"
-            className="flex-wrap"
-          >
-            {(Object.keys(REACH_CHANNEL_LABELS) as ReachChannel[]).map((key) => (
-              <ToggleGroupItem key={key} value={key}>
-                {REACH_CHANNEL_LABELS[key]}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+      {chartData.length === 0 ? (
+        <div
+          className={`flex h-[240px] items-center justify-center text-sm text-muted-foreground ${FLAT_CONTAINER}`}
+        >
+          Brak danych — zaloguj pierwszą akcję.
         </div>
-      </CardHeader>
-
-      <CardContent>
-        {chartData.length === 0 ? (
-          <div className="flex h-[280px] items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
-            Brak danych — zaloguj pierwszą akcję.
-          </div>
-        ) : (
-          <ChartContainer config={chartConfig} className="h-[280px] w-full">
-            <AreaChart data={chartData} margin={{ left: 0, right: 8, top: 8 }}>
+      ) : (
+        <div className={`p-4 ${FLAT_CONTAINER}`}>
+          <ChartContainer config={chartConfig} className="h-[240px] w-full">
+            <AreaChart data={chartData} margin={MINIMAL_CHART_MARGIN}>
               <defs>
                 <linearGradient id="reachFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={strokeColor} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={strokeColor} stopOpacity={0.02} />
+                  <stop
+                    offset="0%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity={0.25}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity={0.02}
+                  />
                 </linearGradient>
               </defs>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis
                 dataKey="label"
                 tickLine={false}
                 axisLine={false}
-                minTickGap={24}
+                tick={MINIMAL_AXIS_TICK}
+                ticks={ticks}
+                interval="preserveStartEnd"
               />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                width={48}
-                tickFormatter={(value) =>
-                  typeof value === "number"
-                    ? value.toLocaleString("pl-PL")
-                    : String(value)
-                }
-              />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    labelFormatter={(_, payload) => {
-                      const point = payload?.[0]?.payload as
-                        | { date?: string; daily?: number }
-                        | undefined;
-                      return point?.date ?? "";
-                    }}
-                    formatter={(value, _name, item) => (
-                      <div className="flex w-full items-center justify-between gap-4">
-                        <span className="text-muted-foreground">Skumulowane</span>
-                        <span className="font-mono font-medium tabular-nums">
-                          {Number(value).toLocaleString("pl-PL")}
-                        </span>
-                        {typeof item.payload?.daily === "number" ? (
-                          <span className="text-muted-foreground">
-                            +{item.payload.daily.toLocaleString("pl-PL")} dziś
-                          </span>
-                        ) : null}
-                      </div>
-                    )}
-                  />
-                }
-              />
+              <ChartTooltip content={<ChartTooltipContent />} />
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke={strokeColor}
+                stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 fill="url(#reachFill)"
                 dot={false}
-                activeDot={{ r: 4, strokeWidth: 0, fill: strokeColor }}
               />
             </AreaChart>
           </ChartContainer>
-        )}
-      </CardContent>
-    </Card>
+          <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+            <span>{chartData[0]?.label}</span>
+            <span>Dziś</span>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

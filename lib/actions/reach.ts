@@ -1,7 +1,7 @@
 "use server";
 
 import { and, asc, eq, gte, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidateDashboard } from "@/lib/revalidate";
 import { db } from "@/lib/db";
 import { activityLogs, reachMetrics } from "@/lib/db/schema";
 import { getCurrentStreak } from "@/lib/actions/activities";
@@ -110,7 +110,7 @@ export async function logQuickCall() {
     { coldCalls: 1 },
     "add",
   );
-  revalidatePath("/");
+  revalidateDashboard();
 
   const streak = await getCurrentStreak();
 
@@ -123,7 +123,7 @@ export async function logQuickCall() {
 export async function logReachMetrics(input: ReachInput) {
   const organizationId = await getCurrentOrganizationId();
   await upsertReachForToday(organizationId, input, "add");
-  revalidatePath("/");
+  revalidateDashboard();
 }
 
 function toReachTotals(row: {

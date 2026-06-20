@@ -5,6 +5,7 @@ export * from "./activities";
 export * from "./deals";
 export * from "./integrations";
 export * from "./webhooks";
+export * from "./calendar";
 
 import { organizations, users } from "./organizations";
 import { leadNotes, leads } from "./leads";
@@ -12,6 +13,7 @@ import { activityLogs, reachMetrics } from "./activities";
 import { deals } from "./deals";
 import { integrations } from "./integrations";
 import { webhookEvents } from "./webhooks";
+import { calendarEvents } from "./calendar";
 
 export const schema = {
   organizations,
@@ -23,4 +25,5 @@ export const schema = {
   deals,
   integrations,
   webhookEvents,
+  calendarEvents,
 };

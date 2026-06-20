@@ -1,11 +1,15 @@
 "use server";
 
-import { and, desc, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { activityLogs, deals, leadNotes, leads } from "@/lib/db/schema";
 import { closeDeal } from "@/lib/actions/deals";
+import {
+  cancelFollowUpForLead,
+  upsertFollowUpFromLead,
+} from "@/lib/actions/calendar";
 import { getCurrentOrganizationId } from "@/lib/tenant";
+import { revalidateDashboard } from "@/lib/revalidate";
 import type { PipelineStageId, LeadSourceId } from "@/lib/crm/pipeline";
 import { ARCHIVE_STAGES } from "@/lib/crm/pipeline";
 
@@ -17,6 +21,15 @@ export type LeadInput = {
   projectValuePln?: number | null;
   source?: LeadSourceId;
   pipelineStage?: PipelineStageId;
+  tags?: string[];
+  nextFollowUpAt?: Date | null;
+};
+
+export type ArchiveFilters = {
+  status?: "won" | "lost";
+  tag?: string;
+  closedFrom?: Date;
+  closedTo?: Date;
 };
 
 export async function getLeads() {
@@ -41,6 +54,37 @@ export async function getCrmLeads() {
   };
 }
 
+export async function getArchivedLeads(filters: ArchiveFilters = {}) {
+  const organizationId = await getCurrentOrganizationId();
+
+  const conditions = [
+    eq(leads.organizationId, organizationId),
+    inArray(leads.pipelineStage, ["won", "lost"]),
+  ];
+
+  if (filters.status) {
+    conditions.push(eq(leads.pipelineStage, filters.status));
+  }
+  if (filters.closedFrom) {
+    conditions.push(gte(leads.closedAt, filters.closedFrom));
+  }
+  if (filters.closedTo) {
+    conditions.push(lte(leads.closedAt, filters.closedTo));
+  }
+
+  let rows = await db
+    .select()
+    .from(leads)
+    .where(and(...conditions))
+    .orderBy(desc(leads.closedAt));
+
+  if (filters.tag) {
+    rows = rows.filter((lead) => lead.tags.includes(filters.tag!));
+  }
+
+  return rows;
+}
+
 export async function createLead(input: LeadInput) {
   const organizationId = await getCurrentOrganizationId();
 
@@ -55,10 +99,16 @@ export async function createLead(input: LeadInput) {
       projectValuePln: input.projectValuePln ?? null,
       source: input.source ?? "cold_call",
       pipelineStage: input.pipelineStage ?? "new",
+      tags: input.tags ?? [],
+      nextFollowUpAt: input.nextFollowUpAt ?? null,
     })
     .returning();
 
-  revalidatePath("/");
+  if (lead.nextFollowUpAt) {
+    await upsertFollowUpFromLead(lead.id, lead.nextFollowUpAt);
+  }
+
+  revalidateDashboard();
   return lead;
 }
 
@@ -85,6 +135,10 @@ export async function updateLead(leadId: string, input: Partial<LeadInput>) {
       ...(input.pipelineStage !== undefined
         ? { pipelineStage: input.pipelineStage }
         : {}),
+      ...(input.tags !== undefined ? { tags: input.tags } : {}),
+      ...(input.nextFollowUpAt !== undefined
+        ? { nextFollowUpAt: input.nextFollowUpAt }
+        : {}),
       updatedAt: new Date(),
     })
     .where(
@@ -92,7 +146,13 @@ export async function updateLead(leadId: string, input: Partial<LeadInput>) {
     )
     .returning();
 
-  revalidatePath("/");
+  if (lead && input.nextFollowUpAt) {
+    await upsertFollowUpFromLead(leadId, input.nextFollowUpAt);
+  } else if (lead && input.nextFollowUpAt === null) {
+    await cancelFollowUpForLead(leadId);
+  }
+
+  revalidateDashboard();
   return lead;
 }
 
@@ -135,11 +195,16 @@ export async function updateLeadStage(leadId: string, stage: PipelineStageId) {
     .set({
       pipelineStage: stage,
       closedAt: isClosing ? now : null,
+      nextFollowUpAt: isClosing ? null : lead.nextFollowUpAt,
       updatedAt: now,
     })
     .where(
       and(eq(leads.id, leadId), eq(leads.organizationId, organizationId)),
     );
+
+  if (isClosing) {
+    await cancelFollowUpForLead(leadId);
+  }
 
   if (stage === "won" && lead.projectValuePln && lead.projectValuePln > 0) {
     await ensureWonDeal(
@@ -149,8 +214,45 @@ export async function updateLeadStage(leadId: string, stage: PipelineStageId) {
     );
   }
 
-  revalidatePath("/");
+  revalidateDashboard();
   return { ...lead, pipelineStage: stage, closedAt: isClosing ? now : null };
+}
+
+export async function reactivateLead(
+  leadId: string,
+  options?: { followUpInMonths?: number },
+) {
+  const organizationId = await getCurrentOrganizationId();
+  const now = new Date();
+
+  await db
+    .update(leads)
+    .set({
+      pipelineStage: "new",
+      closedAt: null,
+      updatedAt: now,
+    })
+    .where(
+      and(eq(leads.id, leadId), eq(leads.organizationId, organizationId)),
+    );
+
+  if (options?.followUpInMonths) {
+    const dueAt = new Date(now);
+    dueAt.setMonth(dueAt.getMonth() + options.followUpInMonths);
+    await upsertFollowUpFromLead(leadId, dueAt, "archive_reactivation");
+    await db
+      .update(leads)
+      .set({ nextFollowUpAt: dueAt })
+      .where(eq(leads.id, leadId));
+  }
+
+  revalidateDashboard();
+  const [lead] = await db
+    .select()
+    .from(leads)
+    .where(eq(leads.id, leadId))
+    .limit(1);
+  return lead ?? null;
 }
 
 export async function logColdCall(leadId: string) {
@@ -178,11 +280,13 @@ export async function logColdCall(leadId: string) {
     leadId,
   });
 
-  revalidatePath("/");
+  revalidateDashboard();
 }
 
 export async function deleteLead(leadId: string) {
   const organizationId = await getCurrentOrganizationId();
+
+  await cancelFollowUpForLead(leadId);
 
   await db
     .delete(leads)
@@ -190,7 +294,7 @@ export async function deleteLead(leadId: string) {
       and(eq(leads.id, leadId), eq(leads.organizationId, organizationId)),
     );
 
-  revalidatePath("/");
+  revalidateDashboard();
 }
 
 export async function getLeadById(leadId: string) {
@@ -261,6 +365,26 @@ export async function addLeadNote(leadId: string, body: string) {
       and(eq(leads.id, leadId), eq(leads.organizationId, organizationId)),
     );
 
-  revalidatePath("/");
+  revalidateDashboard();
   return note;
+}
+
+export async function getWonDealsWithLeads() {
+  const organizationId = await getCurrentOrganizationId();
+
+  return db
+    .select({
+      dealId: deals.id,
+      amountPln: deals.amountPln,
+      description: deals.description,
+      closedAt: deals.closedAt,
+      leadId: leads.id,
+      leadName: leads.name,
+      company: leads.company,
+      pipelineStage: leads.pipelineStage,
+    })
+    .from(deals)
+    .leftJoin(leads, eq(deals.leadId, leads.id))
+    .where(eq(deals.organizationId, organizationId))
+    .orderBy(desc(deals.closedAt));
 }

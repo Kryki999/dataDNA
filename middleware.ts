@@ -10,8 +10,9 @@ export default auth((request) => {
   const isLoginPage = pathname.startsWith("/login");
   const isWebhook = pathname.startsWith("/api/webhooks");
   const isAuthApi = pathname.startsWith("/api/auth");
+  const isPublicProfile = pathname.startsWith("/p/");
 
-  if (isWebhook || isAuthApi) {
+  if (isWebhook || isAuthApi || isPublicProfile) {
     return NextResponse.next();
   }
 
@@ -20,7 +21,7 @@ export default auth((request) => {
   }
 
   if (isLoggedIn && isLoginPage) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/profil", request.url));
   }
 
   return NextResponse.next();
