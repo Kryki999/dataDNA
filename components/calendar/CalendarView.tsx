@@ -1,159 +1,251 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import {
-  addMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  format,
-  isSameDay,
-  isSameMonth,
-  startOfMonth,
-  subMonths,
-} from "date-fns";
+  Calendar,
+  dateFnsLocalizer,
+  type Event,
+  type SlotInfo,
+  type View,
+} from "react-big-calendar";
+import withDragAndDrop, {
+  type EventInteractionArgs,
+} from "react-big-calendar/lib/addons/dragAndDrop";
+import { format, getDay, parse, startOfWeek } from "date-fns";
 import { pl } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
-import { FLAT_CONTAINER, SECTION_LABEL } from "@/lib/ui-patterns";
-import { cn } from "@/lib/utils";
+import { SECTION_LABEL } from "@/lib/ui-patterns";
+import {
+  createManualEvent,
+  rescheduleCalendarEvent,
+} from "@/lib/actions/calendar";
 import type { calendarEvents } from "@/lib/db/schema";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
+import "./calendar.css";
 
-type CalendarEvent = typeof calendarEvents.$inferSelect;
+type DbEvent = typeof calendarEvents.$inferSelect;
 
-type CalendarViewProps = {
-  events: CalendarEvent[];
-  upcoming: CalendarEvent[];
+type CalendarEventItem = Event & {
+  id: string;
+  resource: DbEvent;
 };
 
-export function CalendarView({ events, upcoming }: CalendarViewProps) {
-  const [month, setMonth] = useState(() => startOfMonth(new Date()));
-  const [selectedDay, setSelectedDay] = useState<Date | null>(new Date());
+const DnDCalendar = withDragAndDrop<CalendarEventItem>(Calendar);
 
-  const days = useMemo(() => {
-    return eachDayOfInterval({
-      start: startOfMonth(month),
-      end: endOfMonth(month),
-    });
-  }, [month]);
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }),
+  getDay,
+  locales: { pl },
+});
 
-  const eventsForDay = (day: Date) =>
-    events.filter(
-      (e) =>
-        e.status === "pending" && isSameDay(new Date(e.dueAt), day),
-    );
+const DEFAULT_DURATION_MS = 60 * 60 * 1000;
 
-  const selectedEvents = selectedDay ? eventsForDay(selectedDay) : [];
+function toCalendarEvent(event: DbEvent): CalendarEventItem {
+  const start = new Date(event.dueAt);
+  const end = event.endsAt
+    ? new Date(event.endsAt)
+    : new Date(start.getTime() + DEFAULT_DURATION_MS);
+
+  return {
+    id: event.id,
+    title: event.title,
+    start,
+    end,
+    resource: event,
+  };
+}
+
+type CalendarViewProps = {
+  events: DbEvent[];
+};
+
+export function CalendarView({ events: initialEvents }: CalendarViewProps) {
+  const [events, setEvents] = useState(initialEvents);
+  const [date, setDate] = useState(new Date());
+  const [view, setView] = useState<View>("day");
+  const [, startTransition] = useTransition();
+
+  const calendarEvents = useMemo(
+    () =>
+      events
+        .filter((event) => event.status === "pending")
+        .map(toCalendarEvent),
+    [events],
+  );
+
+  const handleNavigate = useCallback((nextDate: Date) => {
+    setDate(nextDate);
+  }, []);
+
+  const handleViewChange = useCallback((nextView: View) => {
+    setView(nextView);
+  }, []);
+
+  const persistReschedule = useCallback(
+    (eventId: string, start: Date, end: Date) => {
+      startTransition(async () => {
+        try {
+          await rescheduleCalendarEvent(eventId, start, end);
+          toast.success("Termin zaktualizowany");
+        } catch {
+          toast.error("Nie udało się zaktualizować terminu");
+          setEvents(initialEvents);
+        }
+      });
+    },
+    [initialEvents, startTransition],
+  );
+
+  const handleEventDrop = useCallback(
+    ({ event, start, end }: EventInteractionArgs<CalendarEventItem>) => {
+      const nextStart = start instanceof Date ? start : new Date(start);
+      const nextEnd = end instanceof Date ? end : new Date(end);
+
+      setEvents((current) =>
+        current.map((item) =>
+          item.id === event.id
+            ? { ...item, dueAt: nextStart, endsAt: nextEnd }
+            : item,
+        ),
+      );
+
+      persistReschedule(String(event.id), nextStart, nextEnd);
+    },
+    [persistReschedule],
+  );
+
+  const handleEventResize = useCallback(
+    ({ event, start, end }: EventInteractionArgs<CalendarEventItem>) => {
+      const nextStart = start instanceof Date ? start : new Date(start);
+      const nextEnd = end instanceof Date ? end : new Date(end);
+
+      setEvents((current) =>
+        current.map((item) =>
+          item.id === event.id
+            ? { ...item, dueAt: nextStart, endsAt: nextEnd }
+            : item,
+        ),
+      );
+
+      persistReschedule(String(event.id), nextStart, nextEnd);
+    },
+    [persistReschedule],
+  );
+
+  const handleSelectSlot = useCallback(
+    ({ start, end }: SlotInfo) => {
+      const slotStart = start instanceof Date ? start : new Date(start);
+      const slotEnd =
+        end instanceof Date
+          ? end
+          : new Date(slotStart.getTime() + DEFAULT_DURATION_MS);
+
+      const title = window.prompt("Tytuł wydarzenia:");
+      if (!title?.trim()) return;
+
+      startTransition(async () => {
+        try {
+          const created = await createManualEvent({
+            title: title.trim(),
+            dueAt: slotStart,
+            endsAt: slotEnd,
+          });
+          setEvents((current) => [...current, created]);
+          toast.success("Wydarzenie dodane");
+        } catch {
+          toast.error("Nie udało się dodać wydarzenia");
+        }
+      });
+    },
+    [startTransition],
+  );
 
   return (
-    <DashboardPage>
-      <div className="flex items-center justify-between">
+    <DashboardPage wide>
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <p className={SECTION_LABEL}>Kalendarz</p>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setMonth((m) => subMonths(m, 1))}
+            onClick={() =>
+              handleNavigate(
+                new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1),
+              )
+            }
           >
             <ChevronLeft className="size-4" />
           </Button>
-          <span className="min-w-[140px] text-center text-sm font-medium capitalize">
-            {format(month, "LLLL yyyy", { locale: pl })}
+          <span className="min-w-[160px] text-center text-sm font-medium capitalize">
+            {format(date, view === "day" ? "d MMMM yyyy" : "LLLL yyyy", {
+              locale: pl,
+            })}
           </span>
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setMonth((m) => addMonths(m, 1))}
+            onClick={() =>
+              handleNavigate(
+                new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1),
+              )
+            }
           >
             <ChevronRight className="size-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setDate(new Date())}>
+            Dziś
           </Button>
         </div>
       </div>
 
-      <div className={`grid grid-cols-7 gap-1 p-3 ${FLAT_CONTAINER}`}>
-        {["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd"].map((d) => (
-          <div
-            key={d}
-            className="py-1 text-center text-[10px] text-muted-foreground"
-          >
-            {d}
-          </div>
-        ))}
-        {Array.from({ length: (days[0]?.getDay() + 6) % 7 }).map((_, i) => (
-          <div key={`pad-${i}`} />
-        ))}
-        {days.map((day) => {
-          const count = eventsForDay(day).length;
-          const selected = selectedDay && isSameDay(day, selectedDay);
-          const today = isSameDay(day, new Date());
-          return (
-            <button
-              key={day.toISOString()}
-              type="button"
-              onClick={() => setSelectedDay(day)}
-              className={cn(
-                "flex min-h-10 flex-col items-center justify-center rounded-md border border-transparent text-sm transition-colors",
-                !isSameMonth(day, month) && "text-muted-foreground/50",
-                selected && "border-primary bg-primary/20",
-                today && !selected && "border-zinc-700",
-                count > 0 && !selected && "bg-zinc-900",
-              )}
-            >
-              {format(day, "d")}
-              {count > 0 ? (
-                <span className="size-1 rounded-full bg-primary" />
-              ) : null}
-            </button>
-          );
-        })}
+      <div className="calendar-dark h-[calc(100vh-12rem)] min-h-[560px] overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/50 p-2">
+        <DnDCalendar
+          localizer={localizer}
+          events={calendarEvents}
+          date={date}
+          view={view}
+          onNavigate={handleNavigate}
+          onView={handleViewChange}
+          views={["day", "week"]}
+          defaultView="day"
+          step={30}
+          timeslots={2}
+          selectable
+          resizable
+          draggableAccessor={() => true}
+          onEventDrop={handleEventDrop}
+          onEventResize={handleEventResize}
+          onSelectSlot={handleSelectSlot}
+          scrollToTime={new Date(1970, 0, 1, 8, 0, 0)}
+          min={new Date(1970, 0, 1, 7, 0, 0)}
+          max={new Date(1970, 0, 1, 21, 0, 0)}
+          culture="pl"
+          messages={{
+            today: "Dziś",
+            previous: "Wstecz",
+            next: "Dalej",
+            month: "Miesiąc",
+            week: "Tydzień",
+            day: "Dzień",
+            agenda: "Agenda",
+            date: "Data",
+            time: "Czas",
+            event: "Wydarzenie",
+            noEventsInRange: "Brak wydarzeń w tym okresie.",
+          }}
+        />
       </div>
 
-      {selectedDay ? (
-        <section className="space-y-2">
-          <p className={SECTION_LABEL}>
-            {format(selectedDay, "d MMMM yyyy", { locale: pl })}
-          </p>
-          {selectedEvents.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Brak wydarzeń.</p>
-          ) : (
-            <ul className={`divide-y divide-zinc-800 ${FLAT_CONTAINER}`}>
-              {selectedEvents.map((event) => (
-                <li key={event.id} className="px-4 py-3 text-sm">
-                  <p className="font-medium">{event.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(event.dueAt), "HH:mm")}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ) : null}
-
-      <section className="space-y-2">
-        <p className={SECTION_LABEL}>Nadchodzące</p>
-        {upcoming.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Ustaw follow-up w karcie klienta w CRM.
-          </p>
-        ) : (
-          <ul className={`divide-y divide-zinc-800 ${FLAT_CONTAINER}`}>
-            {upcoming.map((event) => (
-              <li
-                key={event.id}
-                className="flex items-center justify-between gap-4 px-4 py-3 text-sm"
-              >
-                <span>{event.title}</span>
-                <span className="text-xs text-muted-foreground">
-                  {format(new Date(event.dueAt), "d MMM, HH:mm", {
-                    locale: pl,
-                  })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <p className="text-xs text-muted-foreground">
+        Przeciągnij wydarzenie na slot czasowy lub rozciągnij jego krawędzie.
+        Kliknij pusty slot, aby dodać nowe wydarzenie.
+      </p>
     </DashboardPage>
   );
 }

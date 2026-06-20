@@ -24,6 +24,7 @@ export async function upsertFollowUpFromLead(
   if (!lead) return null;
 
   const title = `Follow-up: ${lead.company ?? lead.name}`;
+  const endsAt = new Date(dueAt.getTime() + 60 * 60 * 1000);
 
   await db
     .update(leads)
@@ -47,7 +48,7 @@ export async function upsertFollowUpFromLead(
   if (existing) {
     await db
       .update(calendarEvents)
-      .set({ title, dueAt, source, updatedAt: new Date() })
+      .set({ title, dueAt, endsAt, source, updatedAt: new Date() })
       .where(eq(calendarEvents.id, existing.id));
   } else {
     await db.insert(calendarEvents).values({
@@ -55,6 +56,7 @@ export async function upsertFollowUpFromLead(
       leadId,
       title,
       dueAt,
+      endsAt,
       status: "pending",
       source,
     });
@@ -148,12 +150,45 @@ export async function completeCalendarEvent(eventId: string) {
   return event;
 }
 
+export async function rescheduleCalendarEvent(
+  eventId: string,
+  dueAt: Date,
+  endsAt: Date,
+) {
+  const organizationId = await getCurrentOrganizationId();
+  const now = new Date();
+
+  const [event] = await db
+    .update(calendarEvents)
+    .set({ dueAt, endsAt, updatedAt: now })
+    .where(
+      and(
+        eq(calendarEvents.id, eventId),
+        eq(calendarEvents.organizationId, organizationId),
+      ),
+    )
+    .returning();
+
+  if (event?.leadId) {
+    await db
+      .update(leads)
+      .set({ nextFollowUpAt: dueAt, updatedAt: now })
+      .where(eq(leads.id, event.leadId));
+  }
+
+  revalidateDashboard();
+  return event;
+}
+
 export async function createManualEvent(input: {
   title: string;
   dueAt: Date;
+  endsAt?: Date;
   leadId?: string;
 }) {
   const organizationId = await getCurrentOrganizationId();
+  const endsAt =
+    input.endsAt ?? new Date(input.dueAt.getTime() + 60 * 60 * 1000);
 
   const [event] = await db
     .insert(calendarEvents)
@@ -162,6 +197,7 @@ export async function createManualEvent(input: {
       leadId: input.leadId ?? null,
       title: input.title.trim(),
       dueAt: input.dueAt,
+      endsAt,
       status: "pending",
       source: "manual",
     })

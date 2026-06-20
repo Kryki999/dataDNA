@@ -58,8 +58,9 @@ export default async function PublicProfilePage({ params }: PageProps) {
           profilePublic: true,
           stats: profile.stats,
           heatmap: profile.heatmap,
-          sparkline: profile.sparkline,
-          activityLog: profile.activityLog,
+          reachSeries: profile.reachSeries,
+          clientsSeries: profile.clientsSeries,
+          totalClients: profile.totalClients,
         }}
       />
     </div>

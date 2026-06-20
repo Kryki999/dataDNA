@@ -16,6 +16,7 @@ export const calendarEvents = pgTable(
     leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
     title: text("title").notNull(),
     dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     status: calendarEventStatusEnum("status").notNull().default("pending"),
     source: calendarEventSourceEnum("source").notNull().default("crm"),

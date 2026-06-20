@@ -20,13 +20,14 @@ import {
 import { SECTION_LABEL, STAT_VALUE, FLAT_CONTAINER } from "@/lib/ui-patterns";
 import {
   MINIMAL_AXIS_TICK,
+  MINIMAL_CHART_COLORS,
   MINIMAL_CHART_MARGIN,
 } from "@/components/charts/minimal-chart-theme";
 
 const chartConfig = {
   value: {
     label: "Skumulowane",
-    color: "var(--primary)",
+    color: MINIMAL_CHART_COLORS.stroke,
   },
 } satisfies ChartConfig;
 
@@ -108,12 +109,12 @@ export function ReachAnalyticsChart({
                 <linearGradient id="reachFill" x1="0" y1="0" x2="0" y2="1">
                   <stop
                     offset="0%"
-                    stopColor="hsl(var(--primary))"
+                    stopColor={MINIMAL_CHART_COLORS.gradientStart}
                     stopOpacity={0.25}
                   />
                   <stop
                     offset="100%"
-                    stopColor="hsl(var(--primary))"
+                    stopColor={MINIMAL_CHART_COLORS.gradientEnd}
                     stopOpacity={0.02}
                   />
                 </linearGradient>
@@ -130,7 +131,7 @@ export function ReachAnalyticsChart({
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke="hsl(var(--primary))"
+                stroke={MINIMAL_CHART_COLORS.stroke}
                 strokeWidth={2}
                 fill="url(#reachFill)"
                 dot={false}

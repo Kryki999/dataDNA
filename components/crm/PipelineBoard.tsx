@@ -24,12 +24,14 @@ import {
 import { updateLeadStage } from "@/lib/actions/leads";
 import {
   ACTIVE_PIPELINE_STAGES,
+  ARCHIVE_STAGES,
   PIPELINE_COLUMNS,
   type Lead,
   type PipelineStageId,
 } from "@/lib/crm/pipeline";
 import { PipelineColumn } from "./PipelineColumn";
 import { PipelineCard } from "./PipelineCard";
+import { PipelineOutcomeZone } from "./PipelineOutcomeZone";
 import { DealSheet } from "./DealSheet";
 
 type PipelineBoardProps = {
@@ -82,29 +84,35 @@ export function PipelineBoard({
     const overId = event.over?.id;
     if (!overId) return;
 
-    const nextStage = String(overId);
-    if (
-      !ACTIVE_PIPELINE_STAGES.includes(
-        nextStage as (typeof ACTIVE_PIPELINE_STAGES)[number],
-      )
-    ) {
-      return;
-    }
+    const nextStage = String(overId) as PipelineStageId;
+    const validStages = [...ACTIVE_PIPELINE_STAGES, ...ARCHIVE_STAGES];
+    if (!validStages.includes(nextStage)) return;
 
-    const stage = nextStage as (typeof ACTIVE_PIPELINE_STAGES)[number];
     const lead = leads.find((item) => item.id === leadId);
-    if (!lead || lead.pipelineStage === stage) return;
+    if (!lead || lead.pipelineStage === nextStage) return;
 
-    setLeads((current) =>
-      current.map((item) =>
-        item.id === leadId ? { ...item, pipelineStage: stage } : item,
-      ),
-    );
+    const isClosing = nextStage === "won" || nextStage === "lost";
+
+    if (isClosing) {
+      setLeads((current) => current.filter((item) => item.id !== leadId));
+    } else {
+      setLeads((current) =>
+        current.map((item) =>
+          item.id === leadId ? { ...item, pipelineStage: nextStage } : item,
+        ),
+      );
+    }
 
     startTransition(async () => {
       try {
-        await updateLeadStage(leadId, stage);
-        toast.success("Etap zaktualizowany");
+        await updateLeadStage(leadId, nextStage);
+        if (nextStage === "won") {
+          toast.success("Deal wygrany — dodano do Zysków");
+        } else if (nextStage === "lost") {
+          toast.success("Deal przeniesiony do Archiwum");
+        } else {
+          toast.success("Etap zaktualizowany");
+        }
       } catch {
         toast.error("Nie udało się zmienić etapu");
         setLeads(initialLeads);
@@ -134,7 +142,7 @@ export function PipelineBoard({
           <div>
             <CardTitle>Lejek sprzedażowy</CardTitle>
             <CardDescription>
-              Przeciągaj karty między kolumnami · kliknij kartę po szczegóły
+              Przeciągaj karty między etapami · upuść w strefie wygrany/przegrany
             </CardDescription>
           </div>
           <Button onClick={openNewDeal}>
@@ -142,14 +150,14 @@ export function PipelineBoard({
             Nowy klient
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCorners}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            <div className="flex gap-4 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {columns.map((column) => (
                 <PipelineColumn
                   key={column.id}
@@ -164,9 +172,25 @@ export function PipelineBoard({
                 />
               ))}
             </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <PipelineOutcomeZone
+                id="won"
+                label="Wygrany"
+                description="Upuść tutaj — deal trafia do Zysków"
+                variant="won"
+              />
+              <PipelineOutcomeZone
+                id="lost"
+                label="Przegrany"
+                description="Upuść tutaj — deal trafia do Archiwum"
+                variant="lost"
+              />
+            </div>
+
             <DragOverlay>
               {activeLead ? (
-                <div className="w-[280px] rotate-2 opacity-95">
+                <div className="w-full max-w-[280px] rotate-2 opacity-95">
                   <PipelineCard lead={activeLead} onOpen={() => {}} />
                 </div>
               ) : null}

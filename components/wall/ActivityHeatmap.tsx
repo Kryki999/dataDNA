@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/tooltip";
 import { formatWarsawDate } from "@/lib/timezone";
 import { getIntensityLevel } from "@/lib/constants";
-import { BRAND } from "@/lib/brand";
 import { SECTION_LABEL } from "@/lib/ui-patterns";
 
 const INTENSITY_CLASSES = [
@@ -75,9 +74,9 @@ export function ActivityHeatmap({
         <p className={SECTION_LABEL}>Aktywność</p>
       )}
 
-      <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
-        <div className="flex min-w-max gap-[3px]">
-          <div className="flex flex-col justify-around pr-1 pt-5 text-[10px] text-muted-foreground">
+      <div className="w-full overflow-hidden">
+        <div className="flex w-full gap-1">
+          <div className="flex shrink-0 flex-col justify-around pt-5 text-[10px] leading-none text-muted-foreground">
             <span>M</span>
             <span className="opacity-0">T</span>
             <span>W</span>
@@ -86,29 +85,39 @@ export function ActivityHeatmap({
             <span className="opacity-0">S</span>
             <span className="opacity-0">S</span>
           </div>
-          <div className="flex flex-col gap-1">
-            <div className="flex h-4 gap-[3px]">
+          <div className="min-w-0 flex-1">
+            <div
+              className="mb-1 grid h-4 gap-[2px]"
+              style={{
+                gridTemplateColumns: `repeat(${visibleWeeks.length}, minmax(0, 1fr))`,
+              }}
+            >
               {visibleWeeks.map((_, weekIndex) => {
                 const marker = monthMarkers.find((m) => m.index === weekIndex);
                 return (
                   <div
                     key={`month-${weekIndex}`}
-                    className="flex w-[11px] items-start justify-center text-[10px] text-muted-foreground"
+                    className="flex items-start justify-center text-[10px] text-muted-foreground"
                   >
                     {marker?.label ?? ""}
                   </div>
                 );
               })}
             </div>
-            <div className="flex gap-[3px]">
+            <div
+              className="grid gap-[2px]"
+              style={{
+                gridTemplateColumns: `repeat(${visibleWeeks.length}, minmax(0, 1fr))`,
+              }}
+            >
               {visibleWeeks.map((week, weekIndex) => (
-                <div key={weekIndex} className="flex flex-col gap-[3px]">
+                <div key={weekIndex} className="grid grid-rows-7 gap-[2px]">
                   {week.map((dateKey, dayIndex) => {
                     if (!dateKey) {
                       return (
                         <div
                           key={`empty-${weekIndex}-${dayIndex}`}
-                          className="size-2.5 rounded-full bg-transparent"
+                          className="aspect-square w-full rounded-full bg-transparent"
                         />
                       );
                     }
@@ -118,7 +127,7 @@ export function ActivityHeatmap({
                       <Tooltip key={dateKey}>
                         <TooltipTrigger
                           className={cn(
-                            "block size-2.5 rounded-full transition-transform hover:scale-125",
+                            "block aspect-square w-full rounded-full transition-transform hover:scale-125",
                             INTENSITY_CLASSES[level],
                           )}
                         >
@@ -143,11 +152,6 @@ export function ActivityHeatmap({
           </div>
         </div>
       </div>
-      {variant === "default" && (
-        <p className="text-xs text-muted-foreground">
-          Akcent: {BRAND.primary}
-        </p>
-      )}
     </section>
   );
 }

@@ -6,10 +6,9 @@ import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileStatsRow } from "@/components/profile/ProfileStatsRow";
 import { ActivityHeatmap } from "@/components/wall/ActivityHeatmap";
-import { ProfileActivityChart } from "@/components/profile/ProfileActivityChart";
-import { ProfileActivityLog } from "@/components/profile/ProfileActivityLog";
+import { ProfileReachChart } from "@/components/profile/ProfileReachChart";
+import { ProfileClientsChart } from "@/components/profile/ProfileClientsChart";
 import { ProfileEditSheet } from "@/components/profile/ProfileEditSheet";
-import type { ActivityLogEntry } from "@/lib/actions/profile";
 
 export type ProfileViewData = {
   displayName: string;
@@ -28,8 +27,9 @@ export type ProfileViewData = {
     days: Record<string, number>;
     streaks: { current: number; longest: number };
   };
-  sparkline: Array<{ date: string; count: number }>;
-  activityLog: ActivityLogEntry[];
+  reachSeries: Array<{ date: string; reach: number }>;
+  clientsSeries: Array<{ date: string; count: number }>;
+  totalClients: number;
 };
 
 type ProfileViewProps = {
@@ -75,12 +75,15 @@ export function ProfileView({ profile, readOnly = false }: ProfileViewProps) {
 
       <ActivityHeatmap days={profile.heatmap.days} variant="profile" />
 
-      <ProfileActivityChart
-        data={profile.sparkline}
-        activityCount={profile.stats.activityCount}
+      <ProfileReachChart
+        data={profile.reachSeries}
+        totalReach={profile.stats.totalReach}
       />
 
-      <ProfileActivityLog entries={profile.activityLog} />
+      <ProfileClientsChart
+        data={profile.clientsSeries}
+        totalClients={profile.totalClients}
+      />
 
       {!readOnly && (
         <ProfileEditSheet

@@ -41,8 +41,9 @@ export type PublicProfileData = {
     days: Record<string, number>;
     streaks: { current: number; longest: number };
   };
-  sparkline: Array<{ date: string; count: number }>;
-  activityLog: ActivityLogEntry[];
+  reachSeries: Array<{ date: string; reach: number }>;
+  clientsSeries: Array<{ date: string; count: number }>;
+  totalClients: number;
 };
 
 export type ActivityLogEntry = {
@@ -109,8 +110,9 @@ export async function getProfile() {
       activityCount,
     },
     heatmap: { days: heatmap.days, streaks: heatmap.streaks },
-    sparkline: await getProfileActivitySparkline(30),
-    activityLog: await getActivityLog(30),
+    reachSeries: await getProfileReachSparkline(90),
+    clientsSeries: await getProfileClientsSparkline(90),
+    totalClients: await getOrgClientCount(organizationId),
   };
 }
 
@@ -235,7 +237,6 @@ export async function getPublicProfile(
   const metaClicks = Number(reachRow?.metaClicks ?? 0);
 
   const sparkline = await getOrgActivitySparkline(organizationId, 30);
-  const activityLog = await getOrgActivityLog(organizationId, 30);
 
   return {
     displayName,
@@ -250,9 +251,85 @@ export async function getPublicProfile(
       activityCount: heatmapRows.length,
     },
     heatmap: { days: dayCounts, streaks },
-    sparkline,
-    activityLog,
+    reachSeries: await getOrgReachSparkline(organizationId, 90),
+    clientsSeries: await getOrgClientsSparkline(organizationId, 90),
+    totalClients: await getOrgClientCount(organizationId),
   };
+}
+
+async function getOrgReachSparkline(organizationId: string, days: number) {
+  const startKey = toWarsawDateKey(subDays(new Date(), days));
+  const rows = await db
+    .select({
+      dateKey: reachMetrics.dateKey,
+      coldCalls: reachMetrics.coldCalls,
+      xImpressions: reachMetrics.xImpressions,
+      metaClicks: reachMetrics.metaClicks,
+    })
+    .from(reachMetrics)
+    .where(
+      and(
+        eq(reachMetrics.organizationId, organizationId),
+        gte(reachMetrics.dateKey, startKey),
+      ),
+    );
+
+  const reachByDay: Record<string, number> = {};
+  for (const row of rows) {
+    reachByDay[row.dateKey] =
+      row.coldCalls + row.xImpressions + row.metaClicks;
+  }
+
+  const result: Array<{ date: string; reach: number }> = [];
+  for (let i = days; i >= 0; i -= 1) {
+    const key = toWarsawDateKey(subDays(new Date(), i));
+    result.push({ date: key, reach: reachByDay[key] ?? 0 });
+  }
+  return result;
+}
+
+async function getOrgClientsSparkline(organizationId: string, days: number) {
+  const start = subDays(new Date(), days);
+  const rows = await db
+    .select({ createdAt: leads.createdAt })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.organizationId, organizationId),
+        gte(leads.createdAt, start),
+      ),
+    );
+
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    const key = toWarsawDateKey(row.createdAt);
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+
+  const result: Array<{ date: string; count: number }> = [];
+  for (let i = days; i >= 0; i -= 1) {
+    const key = toWarsawDateKey(subDays(new Date(), i));
+    result.push({ date: key, count: counts[key] ?? 0 });
+  }
+  return result;
+}
+
+async function getOrgClientCount(organizationId: string) {
+  const [result] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(leads)
+    .where(eq(leads.organizationId, organizationId));
+  return Number(result?.count ?? 0);
+}
+
+export async function getProfileReachSparkline(days = 90) {
+  const organizationId = await getCurrentOrganizationId();
+  return getOrgReachSparkline(organizationId, days);
+}
+
+export async function getProfileClientsSparkline(days = 90) {
+  const organizationId = await getCurrentOrganizationId();
+  return getOrgClientsSparkline(organizationId, days);
 }
 
 async function getOrgActivitySparkline(organizationId: string, days: number) {

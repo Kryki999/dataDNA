@@ -6,7 +6,6 @@ import { Dna } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import { DASHBOARD_NAV } from "@/lib/dashboard-nav";
-import { useNewLead } from "@/components/dashboard/new-lead-provider";
 import {
   Sidebar,
   SidebarContent,
@@ -23,7 +22,6 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
   const pathname = usePathname();
-  const { openNewLead } = useNewLead();
 
   return (
     <Sidebar
@@ -61,8 +59,6 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
             isActive:
               pathname === item.href || pathname.startsWith(`${item.href}/`),
           }))}
-          onQuickCreate={openNewLead}
-          quickCreateLabel="Nowy klient"
         />
       </SidebarContent>
       <SidebarFooter>

@@ -14,8 +14,9 @@ export default async function ProfilPage() {
         profilePublic: profile.profilePublic,
         stats: profile.stats,
         heatmap: profile.heatmap,
-        sparkline: profile.sparkline,
-        activityLog: profile.activityLog,
+        reachSeries: profile.reachSeries,
+        clientsSeries: profile.clientsSeries,
+        totalClients: profile.totalClients,
       }}
     />
   );

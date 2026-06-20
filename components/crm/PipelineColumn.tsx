@@ -26,7 +26,7 @@ export function PipelineColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex min-h-[420px] w-[280px] shrink-0 flex-col rounded-xl border bg-card/40",
+        "flex min-h-[320px] w-full flex-col rounded-xl border bg-card/40",
         colorClass,
         isOver && "border-primary/60 bg-primary/5 shadow-[inset_0_0_0_1px_rgba(0,85,255,0.25)]",
       )}
