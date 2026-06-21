@@ -74,6 +74,14 @@ https://your-app.vercel.app/p/your-handle
 | `CEO_DISPLAY_NAME` | seed | Display name on profile |
 | `WEBHOOK_ORG_ID` | webhooks | UUID from `db:seed` output |
 | `REVENUE_GOAL_PLN` | optional | Default `20000` |
+| `BLOB_READ_WRITE_TOKEN` | avatars | Auto from Vercel Blob store (see below) |
+
+### Avatar uploads (Vercel Blob)
+
+1. In Vercel project → **Storage** → **Create Database** → **Blob**.
+2. Connect the store to your project — Vercel adds `BLOB_READ_WRITE_TOKEN` automatically.
+3. Locally: `vercel env pull` or paste the token into `.env.local`.
+4. Avatars upload on save from **Profil → Edytuj → Wybierz zdjęcie** (max 2 MB).
 
 ## License
 
