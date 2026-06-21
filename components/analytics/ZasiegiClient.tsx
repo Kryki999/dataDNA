@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { ReachAnalyticsChart } from "@/components/analytics/ReachAnalyticsChart";
-import { ReachCounters } from "@/components/analytics/ReachCounters";
-import { QuickReachForm } from "@/components/analytics/QuickReachForm";
-import { LogCallButton } from "@/components/analytics/LogCallButton";
+import { ReachChannelGrid } from "@/components/analytics/ReachChannelGrid";
 import type { ReachDay, ReachSummary } from "@/lib/types/reach";
 
 type ZasiegiClientProps = {
@@ -42,20 +40,17 @@ export function ZasiegiClient({
   }
 
   return (
-    <DashboardPage>
-      <ReachCounters summary={reach} />
-      <div className="flex flex-wrap items-center gap-3">
-        <LogCallButton
-          callsToday={reach.today.coldCalls}
-          streak={streak}
-          onOptimisticLog={handleOptimisticCallLog}
-        />
-      </div>
+    <DashboardPage wide className="space-y-12">
       <ReachAnalyticsChart
         series={reachSeries}
         allTimeTotal={reach.allTime.total}
       />
-      <QuickReachForm />
+      <ReachChannelGrid
+        summary={reach}
+        series={reachSeries}
+        streak={streak}
+        onOptimisticCallLog={handleOptimisticCallLog}
+      />
     </DashboardPage>
   );
 }

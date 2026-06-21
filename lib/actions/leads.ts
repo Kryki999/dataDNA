@@ -12,6 +12,7 @@ import { getCurrentOrganizationId } from "@/lib/tenant";
 import { revalidateDashboard } from "@/lib/revalidate";
 import type { PipelineStageId, LeadSourceId } from "@/lib/crm/pipeline";
 import { ARCHIVE_STAGES } from "@/lib/crm/pipeline";
+import type { Lead } from "@/lib/crm/pipeline";
 
 export type LeadInput = {
   name: string;
@@ -51,6 +52,50 @@ export async function getCrmLeads() {
     archived: rows.filter((lead) =>
       ARCHIVE_STAGES.includes(lead.pipelineStage as PipelineStageId),
     ),
+  };
+}
+
+async function attachLastNotes<T extends Lead>(
+  rows: T[],
+): Promise<(T & { lastNoteBody: string | null })[]> {
+  if (rows.length === 0) return [];
+
+  const organizationId = await getCurrentOrganizationId();
+  const leadIds = rows.map((r) => r.id);
+
+  const notes = await db
+    .select({
+      leadId: leadNotes.leadId,
+      body: leadNotes.body,
+      createdAt: leadNotes.createdAt,
+    })
+    .from(leadNotes)
+    .where(
+      and(
+        eq(leadNotes.organizationId, organizationId),
+        inArray(leadNotes.leadId, leadIds),
+      ),
+    )
+    .orderBy(desc(leadNotes.createdAt));
+
+  const latestByLead = new Map<string, string>();
+  for (const note of notes) {
+    if (!latestByLead.has(note.leadId)) {
+      latestByLead.set(note.leadId, note.body);
+    }
+  }
+
+  return rows.map((lead) => ({
+    ...lead,
+    lastNoteBody: latestByLead.get(lead.id) ?? (lead.notes?.trim() || null),
+  }));
+}
+
+export async function getCrmLeadsWithMeta() {
+  const { active, archived } = await getCrmLeads();
+  return {
+    active: await attachLastNotes(active),
+    archived: await attachLastNotes(archived),
   };
 }
 
@@ -382,6 +427,7 @@ export async function getWonDealsWithLeads() {
       leadName: leads.name,
       company: leads.company,
       pipelineStage: leads.pipelineStage,
+      tags: leads.tags,
     })
     .from(deals)
     .leftJoin(leads, eq(deals.leadId, leads.id))

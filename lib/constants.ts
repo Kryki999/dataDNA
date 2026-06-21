@@ -12,6 +12,10 @@ export const OUTREACH_ACTIVITY_TYPES = [
 export type OutreachActivityType = (typeof OUTREACH_ACTIVITY_TYPES)[number];
 
 export const PREDEFINED_LEAD_TAGS = [
+  "Detailing",
+  "Next.js",
+  "React",
+  "E-commerce",
   "Wysłane Demo",
   "Umówiony Call",
   "Decydent",

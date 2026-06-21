@@ -1,32 +1,37 @@
 "use client";
 
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
-import { RevenueGoalBar } from "@/components/analytics/RevenueGoalBar";
-import { RevenueBreakdown } from "@/components/analytics/RevenueBreakdown";
+import { RevenueHero } from "@/components/analytics/RevenueHero";
+import { RevenueAnalyticsChart } from "@/components/analytics/RevenueAnalyticsChart";
+import {
+  RevenueDealsTable,
+  type RevenueDealRow,
+} from "@/components/analytics/RevenueDealsTable";
+import type { RevenueDealPoint } from "@/lib/revenue-chart";
 
 type ZyskiClientProps = {
   revenue: { total: number; goal: number; percent: number };
-  deals: Array<{
-    dealId: string;
-    amountPln: number;
-    description: string | null;
-    closedAt: Date;
-    leadId: string | null;
-    leadName: string | null;
-    company: string | null;
-    pipelineStage: string | null;
-  }>;
+  growth: { percentChange: number; thisMonth: number; lastMonth: number };
+  chartDeals: RevenueDealPoint[];
+  deals: RevenueDealRow[];
 };
 
-export function ZyskiClient({ revenue, deals }: ZyskiClientProps) {
+export function ZyskiClient({
+  revenue,
+  growth,
+  chartDeals,
+  deals,
+}: ZyskiClientProps) {
   return (
-    <DashboardPage>
-      <RevenueGoalBar
+    <DashboardPage wide className="space-y-10">
+      <RevenueHero
         total={revenue.total}
         goal={revenue.goal}
-        percent={revenue.percent}
+        percentChange={growth.percentChange}
+        thisMonth={growth.thisMonth}
       />
-      <RevenueBreakdown deals={deals} />
+      <RevenueAnalyticsChart deals={chartDeals} />
+      <RevenueDealsTable deals={deals} />
     </DashboardPage>
   );
 }

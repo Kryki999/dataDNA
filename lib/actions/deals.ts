@@ -69,3 +69,62 @@ export async function getRecentDeals(limit = 5) {
     .orderBy(desc(deals.closedAt))
     .limit(limit);
 }
+
+export async function getDealsTimeSeries() {
+  const organizationId = await getCurrentOrganizationId();
+
+  return db
+    .select({
+      closedAt: deals.closedAt,
+      amountPln: deals.amountPln,
+    })
+    .from(deals)
+    .where(eq(deals.organizationId, organizationId))
+    .orderBy(deals.closedAt);
+}
+
+export async function getRevenueGrowth() {
+  const organizationId = await getCurrentOrganizationId();
+
+  const rows = await db
+    .select({
+      amountPln: deals.amountPln,
+      closedAt: deals.closedAt,
+    })
+    .from(deals)
+    .where(eq(deals.organizationId, organizationId));
+
+  const now = new Date();
+  const startThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const endLastMonth = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    0,
+    23,
+    59,
+    59,
+    999,
+  );
+
+  let thisMonth = 0;
+  let lastMonth = 0;
+
+  for (const row of rows) {
+    const closedAt = row.closedAt;
+    if (closedAt >= startThisMonth) {
+      thisMonth += row.amountPln;
+    } else if (closedAt >= startLastMonth && closedAt <= endLastMonth) {
+      lastMonth += row.amountPln;
+    }
+  }
+
+  const percentChange =
+    lastMonth > 0
+      ? ((thisMonth - lastMonth) / lastMonth) * 100
+      : thisMonth > 0
+        ? 100
+        : 0;
+
+  return { percentChange, thisMonth, lastMonth };
+}

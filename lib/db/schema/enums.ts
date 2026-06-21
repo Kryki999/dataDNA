@@ -54,3 +54,9 @@ export const calendarEventSourceEnum = pgEnum("calendar_event_source", [
   "manual",
   "archive_reactivation",
 ]);
+export const projectTaskStageEnum = pgEnum("project_task_stage", [
+  "todo",
+  "in_progress",
+  "review",
+  "done",
+]);

@@ -1,7 +1,19 @@
-import { getCrmLeads } from "@/lib/actions/leads";
+import { auth } from "@/lib/auth";
+import { getCrmLeadsWithMeta } from "@/lib/actions/leads";
 import { KlienciClient } from "@/components/crm/KlienciClient";
 
 export default async function KlienciPage() {
-  const { active } = await getCrmLeads();
-  return <KlienciClient leads={active} />;
+  const session = await auth();
+  const { active } = await getCrmLeadsWithMeta();
+
+  return (
+    <KlienciClient
+      leads={active}
+      currentUser={{
+        displayName: session?.user?.displayName,
+        email: session?.user?.email,
+        avatarUrl: session?.user?.avatarUrl,
+      }}
+    />
+  );
 }

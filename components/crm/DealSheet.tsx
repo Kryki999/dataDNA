@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { ProjectKanban } from "@/components/crm/ProjectKanban";
 import {
   addLeadNote,
   createLead,
@@ -40,6 +41,7 @@ import {
   type LeadSourceId,
   type PipelineStageId,
 } from "@/lib/crm/pipeline";
+import { cn } from "@/lib/utils";
 
 type LeadNote = {
   id: string;
@@ -222,11 +224,21 @@ export function DealSheet({
         </SheetHeader>
 
         <Tabs defaultValue="details" className="mt-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList
+            className={cn(
+              "grid w-full",
+              lead?.pipelineStage === "won"
+                ? "grid-cols-3"
+                : "grid-cols-2",
+            )}
+          >
             <TabsTrigger value="details">Szczegóły</TabsTrigger>
             <TabsTrigger value="timeline" disabled={!lead}>
               Oś czasu
             </TabsTrigger>
+            {lead?.pipelineStage === "won" ? (
+              <TabsTrigger value="project">Tablica Projektu</TabsTrigger>
+            ) : null}
           </TabsList>
 
           <TabsContent value="details" className="mt-4 space-y-4">
@@ -438,6 +450,12 @@ export function DealSheet({
               )}
             </div>
           </TabsContent>
+
+          {lead?.pipelineStage === "won" ? (
+            <TabsContent value="project" className="mt-4">
+              <ProjectKanban leadId={lead.id} />
+            </TabsContent>
+          ) : null}
         </Tabs>
       </SheetContent>
     </Sheet>
