@@ -2,151 +2,98 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { LayoutGroup } from "framer-motion";
-import { Kanban, List, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { PipelineBoard } from "@/components/crm/PipelineBoard";
-import { LeadsListTable } from "@/components/crm/LeadsListTable";
-import { DealSheet } from "@/components/crm/DealSheet";
-import { useNewLead } from "@/components/dashboard/new-lead-provider";
-import type { Lead, LeadWithMeta, PipelineStageId } from "@/lib/crm/pipeline";
-import type { CurrentUser } from "@/components/crm/PipelineCard";
+import { PipelineDealDetail } from "@/components/crm/PipelineDealDetail";
+import { MotionDetailOverlay } from "@/components/ui/motion-detail-overlay";
+import { getActivePipelineDealsWithMeta, type PipelineDealWithMeta } from "@/lib/actions/pipeline-deals";
+import type { CurrentUser } from "@/lib/crm/current-user";
+import { useCrmModals } from "@/components/crm/CrmModalsProvider";
 import { EYEBROW } from "@/lib/ui-patterns";
-import { cn } from "@/lib/utils";
-
-type CrmView = "kanban" | "list";
 
 type KlienciClientProps = {
-  leads: LeadWithMeta[];
+  deals: PipelineDealWithMeta[];
   currentUser?: CurrentUser;
 };
 
-export function KlienciClient({ leads: initialLeads, currentUser }: KlienciClientProps) {
-  const [view, setView] = useState<CrmView>("kanban");
-  const [leads, setLeads] = useState(initialLeads);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+export function KlienciClient({
+  deals: initialDeals,
+  currentUser,
+}: KlienciClientProps) {
+  const [deals, setDeals] = useState(initialDeals);
+  const [selectedDeal, setSelectedDeal] = useState<PipelineDealWithMeta | null>(
+    null,
+  );
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [defaultStage, setDefaultStage] = useState<PipelineStageId | undefined>();
-  const { registerOpenNewLead } = useNewLead();
+  const { openClient } = useCrmModals();
 
   useEffect(() => {
-    setLeads(initialLeads);
-  }, [initialLeads]);
+    setDeals(initialDeals);
+  }, [initialDeals]);
 
-  const openNewDeal = useCallback(() => {
-    setSelectedLead(null);
-    setDefaultStage(undefined);
-    setSheetOpen(true);
+  const refreshDeals = useCallback(async () => {
+    const rows = await getActivePipelineDealsWithMeta();
+    setDeals(rows);
   }, []);
 
-  const openNewDealWithStage = useCallback((stage: PipelineStageId) => {
-    setSelectedLead(null);
-    setDefaultStage(stage);
-    setSheetOpen(true);
-  }, []);
-
-  function handleSheetOpenChange(open: boolean) {
-    setSheetOpen(open);
-    if (!open) setDefaultStage(undefined);
-  }
-
-  useEffect(() => {
-    registerOpenNewLead(openNewDeal);
-  }, [registerOpenNewLead, openNewDeal]);
-
-  function handleOpenLead(lead: Lead) {
-    setSelectedLead(lead);
+  function handleOpenDeal(deal: PipelineDealWithMeta) {
+    setSelectedDeal(deal);
     setSheetOpen(true);
   }
 
-  function handleLeadUpdated(lead: Lead) {
-    setLeads((current) => {
-      const exists = current.some((item) => item.id === lead.id);
-      if (!exists) {
-        return [{ ...lead, lastNoteBody: null }, ...current];
-      }
-      return current.map((item) =>
-        item.id === lead.id ? { ...item, ...lead } : item,
-      );
-    });
-    setSelectedLead(lead);
+  function handleDealUpdated(deal: PipelineDealWithMeta) {
+    setDeals((current) =>
+      current.map((item) => (item.id === deal.id ? deal : item)),
+    );
+    setSelectedDeal(deal);
   }
 
-  function handleLeadArchived(leadId: string) {
-    setLeads((current) => current.filter((item) => item.id !== leadId));
+  function handleDealClosed(dealId: string) {
+    setDeals((current) => current.filter((item) => item.id !== dealId));
     setSheetOpen(false);
-    setSelectedLead(null);
+    setSelectedDeal(null);
   }
 
   return (
     <DashboardPage full>
-      <header className="mb-6 space-y-4">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className={EYEBROW}>Pipeline sprzedaży</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Lejek sprzedażowy — aktywne procesy
-            </p>
-          </div>
-          <Button onClick={openNewDeal}>
-            <Plus className="size-4" />
-            Nowy klient
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-1 border-b border-dna-border/40">
-          <button
-            type="button"
-            onClick={() => setView("kanban")}
-            className={cn(
-              "inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors",
-              view === "kanban"
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Kanban className="size-4" />
-            Kanban
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("list")}
-            className={cn(
-              "inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors",
-              view === "list"
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <List className="size-4" />
-            Lista
-          </button>
-        </div>
+      <header className="mb-6">
+        <p className={EYEBROW}>Pipeline sprzedaży</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Aktywne projekty — kliknij + i wpisz nazwę
+        </p>
       </header>
 
       <LayoutGroup id="crm-deals">
-        {view === "kanban" ? (
-          <PipelineBoard
-            leads={leads}
-            currentUser={currentUser}
-            onOpenLead={handleOpenLead}
-            onLeadUpdated={handleLeadUpdated}
-            onLeadArchived={handleLeadArchived}
-            onAddLead={openNewDealWithStage}
-            selectedLeadId={sheetOpen ? selectedLead?.id : null}
-          />
-        ) : (
-          <LeadsListTable leads={leads} onOpenLead={handleOpenLead} />
-        )}
-
-        <DealSheet
-          open={sheetOpen}
-          onOpenChange={handleSheetOpenChange}
-          lead={selectedLead}
-          defaultStage={defaultStage}
-          onUpdated={handleLeadUpdated}
-          onArchived={handleLeadArchived}
+        <PipelineBoard
+          deals={deals}
+          currentUser={currentUser}
+          onOpenDeal={handleOpenDeal}
+          onDealClosed={handleDealClosed}
+          onRefresh={refreshDeals}
+          selectedDealId={sheetOpen ? selectedDeal?.id : null}
         />
+
+        <MotionDetailOverlay
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          layoutId={
+            selectedDeal ? `pipeline-deal-${selectedDeal.id}` : undefined
+          }
+          panelClassName="!flex !max-h-[min(88vh,760px)] !flex-col !overflow-hidden p-0"
+        >
+          {selectedDeal && sheetOpen ? (
+            <PipelineDealDetail
+              deal={selectedDeal}
+              onUpdated={handleDealUpdated}
+              onClosed={handleDealClosed}
+              onOpenClient={(id) => {
+                setSheetOpen(false);
+                openClient(id);
+              }}
+              onClose={() => setSheetOpen(false)}
+            />
+          ) : null}
+        </MotionDetailOverlay>
       </LayoutGroup>
     </DashboardPage>
   );

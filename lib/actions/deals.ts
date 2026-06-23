@@ -3,25 +3,29 @@
 import { desc, eq, sql } from "drizzle-orm";
 import { revalidateDashboard } from "@/lib/revalidate";
 import { db } from "@/lib/db";
-import { activityLogs, deals } from "@/lib/db/schema";
+import { activityLogs, revenueRecords } from "@/lib/db/schema";
 import { getCurrentOrganizationId } from "@/lib/tenant";
 
-export type DealInput = {
+export type RevenueInput = {
   amountPln: number;
   description?: string;
+  clientId?: string;
+  pipelineDealId?: string;
   leadId?: string;
 };
 
-export async function closeDeal(input: DealInput) {
+export async function closeRevenueRecord(input: RevenueInput) {
   const organizationId = await getCurrentOrganizationId();
   const now = new Date();
 
-  const [deal] = await db
-    .insert(deals)
+  const [record] = await db
+    .insert(revenueRecords)
     .values({
       organizationId,
       amountPln: input.amountPln,
       description: input.description?.trim() || null,
+      clientId: input.clientId ?? null,
+      pipelineDealId: input.pipelineDealId ?? null,
       leadId: input.leadId ?? null,
       source: "manual",
       closedAt: now,
@@ -38,58 +42,65 @@ export async function closeDeal(input: DealInput) {
   });
 
   revalidateDashboard();
-  return deal;
+  return record;
 }
+
+/** @deprecated Use closeRevenueRecord */
+export const closeDeal = closeRevenueRecord;
 
 export async function getTotalRevenue() {
   const organizationId = await getCurrentOrganizationId();
 
   const [result] = await db
     .select({
-      total: sql<number>`coalesce(sum(${deals.amountPln}), 0)`,
+      total: sql<number>`coalesce(sum(${revenueRecords.amountPln}), 0)`,
     })
-    .from(deals)
-    .where(eq(deals.organizationId, organizationId));
+    .from(revenueRecords)
+    .where(eq(revenueRecords.organizationId, organizationId));
 
-  const total = Number(result?.total ?? 0);
-
-  return { total };
+  return { total: Number(result?.total ?? 0) };
 }
 
-export async function getRecentDeals(limit = 5) {
+export async function getRecentRevenueRecords(limit = 5) {
   const organizationId = await getCurrentOrganizationId();
 
   return db
     .select()
-    .from(deals)
-    .where(eq(deals.organizationId, organizationId))
-    .orderBy(desc(deals.closedAt))
+    .from(revenueRecords)
+    .where(eq(revenueRecords.organizationId, organizationId))
+    .orderBy(desc(revenueRecords.closedAt))
     .limit(limit);
 }
 
-export async function getDealsTimeSeries() {
+/** @deprecated */
+export const getRecentDeals = getRecentRevenueRecords;
+
+export async function getRevenueTimeSeries() {
   const organizationId = await getCurrentOrganizationId();
 
   return db
     .select({
-      closedAt: deals.closedAt,
-      amountPln: deals.amountPln,
+      closedAt: revenueRecords.closedAt,
+      amountPln: revenueRecords.amountPln,
     })
-    .from(deals)
-    .where(eq(deals.organizationId, organizationId))
-    .orderBy(deals.closedAt);
+    .from(revenueRecords)
+    .where(eq(revenueRecords.organizationId, organizationId))
+    .orderBy(revenueRecords.closedAt);
 }
+
+/** @deprecated */
+export const getDealsTimeSeries = getRevenueTimeSeries;
 
 export async function getRevenueGrowth() {
   const organizationId = await getCurrentOrganizationId();
 
   const rows = await db
     .select({
-      amountPln: deals.amountPln,
-      closedAt: deals.closedAt,
+      amountPln: revenueRecords.amountPln,
+      closedAt: revenueRecords.closedAt,
     })
-    .from(deals)
-    .where(eq(deals.organizationId, organizationId));
+    .from(revenueRecords)
+    .where(eq(revenueRecords.organizationId, organizationId));
 
   const now = new Date();
   const startThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);

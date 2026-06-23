@@ -1,6 +1,7 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
+import { motion } from "framer-motion";
 import type { PlannerEventWithMeta } from "@/lib/planner/types";
 import { PlannerIconBadge } from "@/components/planner/PlannerIconBadge";
 import { leadLabel } from "@/components/planner/planner-utils";
@@ -16,6 +17,8 @@ type PlannerBacklogCardProps = {
   isMobile?: boolean;
   variant?: "default" | "sticky";
   stickyIndex?: number;
+  layoutId?: boolean;
+  selected?: boolean;
 };
 
 export function PlannerBacklogCard({
@@ -25,6 +28,8 @@ export function PlannerBacklogCard({
   isMobile,
   variant = "default",
   stickyIndex = 0,
+  layoutId = false,
+  selected = false,
 }: PlannerBacklogCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -35,7 +40,19 @@ export function PlannerBacklogCard({
   const isSticky = variant === "sticky";
   const rotation = STICKY_ROTATIONS[stickyIndex % STICKY_ROTATIONS.length];
 
-  return (
+  if (selected) {
+    return (
+      <div
+        className={cn(
+          "invisible rounded-lg",
+          isSticky ? "h-24 w-[192px]" : "min-h-[80px]",
+        )}
+        aria-hidden
+      />
+    );
+  }
+
+  const inner = (
     <div
       ref={setNodeRef}
       style={{
@@ -105,4 +122,12 @@ export function PlannerBacklogCard({
       </div>
     </div>
   );
+
+  if (layoutId && !isDragging) {
+    return (
+      <motion.div layoutId={`planner-event-${event.id}`}>{inner}</motion.div>
+    );
+  }
+
+  return inner;
 }

@@ -8,6 +8,21 @@ export const leadPipelineStageEnum = pgEnum("lead_pipeline_stage", [
   "won",
   "lost",
 ]);
+
+/** Kanban deal lifecycle (V3.1 Golden Triangle) */
+export const pipelineDealStatusEnum = pgEnum("pipeline_deal_status", [
+  "new",
+  "contact_made",
+  "demo_sent",
+  "negotiation",
+  "closed_won",
+  "closed_lost",
+]);
+
+export const clientNoteTypeEnum = pgEnum("client_note_type", [
+  "user",
+  "system",
+]);
 export const leadSourceEnum = pgEnum("lead_source", [
   "cold_call",
   "x",

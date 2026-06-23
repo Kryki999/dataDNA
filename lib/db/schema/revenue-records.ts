@@ -8,11 +8,13 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { organizations } from "./organizations";
+import { clients } from "./clients";
+import { pipelineDeals } from "./pipeline-deals";
 import { leads } from "./leads";
 import { dealSourceEnum } from "./enums";
 
-export const deals = pgTable(
-  "deals",
+export const revenueRecords = pgTable(
+  "revenue_records",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     organizationId: uuid("organization_id")
@@ -20,6 +22,14 @@ export const deals = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
     amountPln: integer("amount_pln").notNull(),
     description: text("description"),
+    clientId: uuid("client_id").references(() => clients.id, {
+      onDelete: "set null",
+    }),
+    pipelineDealId: uuid("pipeline_deal_id").references(
+      () => pipelineDeals.id,
+      { onDelete: "set null" },
+    ),
+    /** @deprecated legacy link — prefer clientId */
     leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
     source: dealSourceEnum("source").notNull().default("manual"),
     externalId: text("external_id"),
@@ -31,8 +41,11 @@ export const deals = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("deals_org_closed_idx").on(table.organizationId, table.closedAt),
-    uniqueIndex("deals_org_source_external_unique").on(
+    index("revenue_records_org_closed_idx").on(
+      table.organizationId,
+      table.closedAt,
+    ),
+    uniqueIndex("revenue_records_org_source_external_unique").on(
       table.organizationId,
       table.source,
       table.externalId,

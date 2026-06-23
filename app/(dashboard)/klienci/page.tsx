@@ -1,14 +1,14 @@
 import { auth } from "@/lib/auth";
-import { getCrmLeadsWithMeta } from "@/lib/actions/leads";
+import { getActivePipelineDealsWithMeta } from "@/lib/actions/pipeline-deals";
 import { KlienciClient } from "@/components/crm/KlienciClient";
 
 export default async function KlienciPage() {
   const session = await auth();
-  const { active } = await getCrmLeadsWithMeta();
+  const deals = await getActivePipelineDealsWithMeta();
 
   return (
     <KlienciClient
-      leads={active}
+      deals={deals}
       currentUser={{
         displayName: session?.user?.displayName,
         email: session?.user?.email,

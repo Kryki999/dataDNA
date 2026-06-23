@@ -1,5 +1,6 @@
 import { index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { organizations } from "./organizations";
+import { clients } from "./clients";
 import { leads } from "./leads";
 import {
   calendarEventSourceEnum,
@@ -15,6 +16,9 @@ export const calendarEvents = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
     leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
+    clientId: uuid("client_id").references(() => clients.id, {
+      onDelete: "set null",
+    }),
     title: text("title").notNull(),
     description: text("description").notNull().default(""),
     icon: plannerEventIconEnum("icon").notNull().default("task"),
@@ -36,6 +40,7 @@ export const calendarEvents = pgTable(
       table.dueAt,
     ),
     index("calendar_events_lead_idx").on(table.leadId),
+    index("calendar_events_client_idx").on(table.clientId),
     index("calendar_events_org_status_idx").on(
       table.organizationId,
       table.status,

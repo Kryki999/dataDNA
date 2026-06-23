@@ -3,10 +3,11 @@
 import { useDroppable } from "@dnd-kit/core";
 import { CheckCircle2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { PipelineStageId } from "@/lib/crm/pipeline";
+
+type OutcomeId = "closed_won" | "closed_lost";
 
 type PipelineOutcomeZoneProps = {
-  id: Extract<PipelineStageId, "won" | "lost">;
+  id: OutcomeId;
   label: string;
   description: string;
   variant: "won" | "lost";
@@ -62,10 +63,7 @@ export function PipelineOutcomeZoneStatic(props: PipelineOutcomeZoneProps) {
   return <PipelineOutcomeZoneView {...props} />;
 }
 
-export function PipelineOutcomeZone({
-  id,
-  ...props
-}: PipelineOutcomeZoneProps) {
+export function PipelineOutcomeZone({ id, ...props }: PipelineOutcomeZoneProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (

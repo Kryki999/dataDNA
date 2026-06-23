@@ -1,17 +1,17 @@
 import {
-  getDealsTimeSeries,
+  getRevenueTimeSeries,
   getRevenueGrowth,
   getTotalRevenue,
 } from "@/lib/actions/deals";
-import { getWonDealsWithLeads } from "@/lib/actions/leads";
+import { getWonClientsForRevenue } from "@/lib/actions/pipeline-deals";
 import { ZyskiClient } from "@/components/analytics/ZyskiClient";
 
 export default async function ZyskiPage() {
-  const [revenue, growth, chartDeals, deals] = await Promise.all([
+  const [revenue, growth, chartDeals, clients] = await Promise.all([
     getTotalRevenue(),
     getRevenueGrowth(),
-    getDealsTimeSeries(),
-    getWonDealsWithLeads(),
+    getRevenueTimeSeries(),
+    getWonClientsForRevenue(),
   ]);
 
   return (
@@ -19,10 +19,7 @@ export default async function ZyskiPage() {
       revenue={revenue}
       growth={growth}
       chartDeals={chartDeals}
-      deals={deals.map((deal) => ({
-        ...deal,
-        tags: deal.tags ?? null,
-      }))}
+      clients={clients}
     />
   );
 }

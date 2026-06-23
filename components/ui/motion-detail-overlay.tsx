@@ -11,7 +11,9 @@ type MotionDetailOverlayProps = {
   onClose: () => void;
   layoutId?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   className?: string;
+  panelClassName?: string;
 };
 
 export function MotionDetailOverlay({
@@ -19,7 +21,9 @@ export function MotionDetailOverlay({
   onClose,
   layoutId,
   children,
+  footer,
   className,
+  panelClassName,
 }: MotionDetailOverlayProps) {
   const reducedMotion = useReducedMotion();
 
@@ -54,9 +58,9 @@ export function MotionDetailOverlay({
             key="motion-detail-panel"
             layoutId={layoutId}
             className={cn(
-              "fixed inset-x-4 top-[8%] z-50 mx-auto max-h-[min(85vh,720px)] w-full max-w-lg overflow-x-hidden overflow-y-auto rounded-xl bg-dna-surface shadow-2xl",
-              DNA_SCROLLBAR,
+              "fixed inset-x-4 top-[6%] z-50 mx-auto flex max-h-[min(88vh,760px)] w-full max-w-lg flex-col overflow-hidden rounded-xl bg-dna-surface shadow-2xl",
               className,
+              panelClassName,
             )}
             transition={
               reducedMotion
@@ -65,7 +69,31 @@ export function MotionDetailOverlay({
             }
             onClick={(e) => e.stopPropagation()}
           >
-            {children}
+            <div
+              className={cn(
+                "flex min-h-0 flex-1 flex-col",
+                footer ? "" : "overflow-y-auto",
+                !footer && DNA_SCROLLBAR,
+              )}
+            >
+              {footer ? (
+                <div
+                  className={cn(
+                    "min-h-0 flex-1 overflow-y-auto",
+                    DNA_SCROLLBAR,
+                  )}
+                >
+                  {children}
+                </div>
+              ) : (
+                children
+              )}
+            </div>
+            {footer ? (
+              <div className="shrink-0 border-t border-dna-border bg-dna-surface p-4">
+                {footer}
+              </div>
+            ) : null}
           </motion.div>
         </>
       ) : null}

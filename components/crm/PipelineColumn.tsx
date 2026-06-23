@@ -1,23 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
+import { ClientTypeahead } from "@/components/crm/ClientTypeahead";
+import type { PipelineDealWithMeta } from "@/lib/actions/pipeline-deals";
+import type { PipelineDealStatus } from "@/lib/crm/pipeline-deals";
+import { PIPELINE_DEAL_COLUMNS } from "@/lib/crm/pipeline-deals";
+import type { CurrentUser } from "@/lib/crm/current-user";
+import { PipelineCard, PipelineCardStatic } from "./PipelineCard";
 import { SURFACE_CARD } from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
-import type { Lead, LeadWithMeta, PipelineStageId } from "@/lib/crm/pipeline";
-import type { CurrentUser } from "@/components/crm/PipelineCard";
-import { PipelineCard, PipelineCardStatic } from "./PipelineCard";
 
 type PipelineColumnProps = {
-  id: PipelineStageId;
+  id: PipelineDealStatus;
   label: string;
   accentColor: string;
-  leads: LeadWithMeta[];
+  deals: PipelineDealWithMeta[];
   currentUser?: CurrentUser;
-  onOpenLead: (lead: Lead) => void;
-  onLeadUpdated: (lead: Lead) => void;
-  onAddLead: (stage: PipelineStageId) => void;
-  selectedLeadId?: string | null;
+  onOpenDeal: (deal: PipelineDealWithMeta) => void;
+  onDealCreated: () => void;
+  selectedDealId?: string | null;
 };
 
 type PipelineColumnViewProps = PipelineColumnProps & {
@@ -30,17 +33,18 @@ function PipelineColumnView({
   id,
   label,
   accentColor,
-  leads,
+  deals,
   currentUser,
-  onOpenLead,
-  onLeadUpdated,
-  onAddLead,
-  selectedLeadId,
+  onOpenDeal,
+  onDealCreated,
+  selectedDealId,
   columnRef,
   isOver = false,
   interactive = false,
 }: PipelineColumnViewProps) {
+  const [adding, setAdding] = useState(false);
   const Card = interactive ? PipelineCard : PipelineCardStatic;
+  const isActiveColumn = PIPELINE_DEAL_COLUMNS.some((c) => c.id === id);
 
   return (
     <div
@@ -60,33 +64,48 @@ function PipelineColumnView({
           {label}
         </h3>
         <span className="rounded-md bg-dna-inset px-2 py-0.5 font-mono text-xs tabular-nums text-muted-foreground">
-          {leads.length}
+          {deals.length}
         </span>
       </div>
 
-      <button
-        type="button"
-        onClick={() => onAddLead(id)}
-        className="mx-3 flex h-9 shrink-0 items-center justify-center rounded-lg border border-dna-border/30 bg-dna-inset text-muted-foreground transition-colors hover:bg-dna-inset/80 hover:text-foreground"
-        aria-label={`Dodaj klienta — ${label}`}
-      >
-        <Plus className="size-4" />
-      </button>
-
-      <div className="mx-2 mb-2 flex flex-1 flex-col gap-2.5 overflow-y-auto rounded-lg bg-dna-inset/40 p-2 pt-1">
-        {leads.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-dna-border/25 bg-dna-inset/50 p-4 text-center text-xs text-muted-foreground">
-            Upuść klienta tutaj
+      {isActiveColumn ? (
+        adding ? (
+          <div className="mx-3 mb-2 shrink-0">
+            <ClientTypeahead
+              autoFocus
+              defaultStatus={id}
+              onCreated={() => {
+                setAdding(false);
+                onDealCreated();
+              }}
+              onCancel={() => setAdding(false)}
+            />
           </div>
         ) : (
-          leads.map((lead) => (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="mx-3 flex h-9 shrink-0 items-center justify-center rounded-lg border border-dna-border/30 bg-dna-inset text-muted-foreground transition-colors hover:bg-dna-inset/80 hover:text-foreground"
+            aria-label={`Dodaj — ${label}`}
+          >
+            <Plus className="size-4" />
+          </button>
+        )
+      ) : null}
+
+      <div className="mx-2 mb-2 flex flex-1 flex-col gap-2.5 overflow-y-auto rounded-lg bg-dna-inset/40 p-2 pt-1">
+        {deals.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-dna-border/25 bg-dna-inset/50 p-4 text-center text-xs text-muted-foreground">
+            Upuść kartę tutaj
+          </div>
+        ) : (
+          deals.map((deal) => (
             <Card
-              key={lead.id}
-              lead={lead}
+              key={deal.id}
+              deal={deal}
               currentUser={currentUser}
-              onOpen={onOpenLead}
-              onUpdated={onLeadUpdated}
-              selectedLeadId={selectedLeadId}
+              onOpen={onOpenDeal}
+              selectedDealId={selectedDealId}
             />
           ))
         )}

@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { organizations } from "./organizations";
 import { leads } from "./leads";
+import { pipelineDeals } from "./pipeline-deals";
 import { projectTaskStageEnum } from "./enums";
 
 export const projectTasks = pgTable(
@@ -20,6 +21,10 @@ export const projectTasks = pgTable(
     leadId: uuid("lead_id")
       .notNull()
       .references(() => leads.id, { onDelete: "cascade" }),
+    pipelineDealId: uuid("pipeline_deal_id").references(
+      () => pipelineDeals.id,
+      { onDelete: "cascade" },
+    ),
     title: text("title").notNull(),
     description: text("description"),
     stage: projectTaskStageEnum("stage").notNull().default("todo"),
@@ -37,5 +42,6 @@ export const projectTasks = pgTable(
       table.stage,
       table.sortOrder,
     ),
+    index("project_tasks_pipeline_deal_idx").on(table.pipelineDealId),
   ],
 );

@@ -9,7 +9,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-syne), ui-sans-serif, sans-serif;
+  --font-display: var(--font-syne), ui-sans-serif, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -188,6 +189,10 @@
 
 /* Natywny scroll — tylko styl, zero JS, pełna niezawodność */
 @layer utilities {
+  .font-display {
+    font-family: var(--font-display), ui-sans-serif, sans-serif;
+  }
+
   .dna-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: var(--dna-scrollbar-thumb) transparent;

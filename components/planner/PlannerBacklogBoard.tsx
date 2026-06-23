@@ -15,6 +15,7 @@ type PlannerBacklogBoardProps = {
   events: PlannerEventWithMeta[];
   onQuickAddClick: () => void;
   onSelect?: (id: string) => void;
+  selectedId?: string | null;
   className?: string;
 };
 
@@ -22,6 +23,7 @@ export function PlannerBacklogBoard({
   events,
   onQuickAddClick,
   onSelect,
+  selectedId,
   className,
 }: PlannerBacklogBoardProps) {
   const [query, setQuery] = useState("");
@@ -90,6 +92,8 @@ export function PlannerBacklogBoard({
                 event={event}
                 variant="sticky"
                 stickyIndex={index}
+                layoutId
+                selected={selectedId === event.id}
                 onClick={onSelect ? () => onSelect(event.id) : undefined}
               />
             ))}

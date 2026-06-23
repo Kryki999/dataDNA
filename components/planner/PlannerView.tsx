@@ -238,6 +238,7 @@ export function PlannerView({
                 events={backlog}
                 onQuickAddClick={() => setQuickAddOpen(true)}
                 onSelect={setSelectedId}
+                selectedId={selectedId}
               />
             ) : null}
           </div>

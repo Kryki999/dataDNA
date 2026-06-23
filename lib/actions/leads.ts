@@ -2,8 +2,8 @@
 
 import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { activityLogs, deals, leadNotes, leads } from "@/lib/db/schema";
-import { closeDeal } from "@/lib/actions/deals";
+import { activityLogs, revenueRecords, leadNotes, leads } from "@/lib/db/schema";
+import { closeRevenueRecord } from "@/lib/actions/deals";
 import {
   cancelFollowUpForLead,
   upsertFollowUpFromLead,
@@ -204,15 +204,15 @@ export async function updateLead(leadId: string, input: Partial<LeadInput>) {
 async function ensureWonDeal(leadId: string, amountPln: number, label: string) {
   const organizationId = await getCurrentOrganizationId();
   const [existing] = await db
-    .select({ id: deals.id })
-    .from(deals)
+    .select({ id: revenueRecords.id })
+    .from(revenueRecords)
     .where(
-      and(eq(deals.organizationId, organizationId), eq(deals.leadId, leadId)),
+      and(eq(revenueRecords.organizationId, organizationId), eq(revenueRecords.leadId, leadId)),
     )
     .limit(1);
 
   if (!existing) {
-    await closeDeal({
+    await closeRevenueRecord({
       amountPln,
       leadId,
       description: label,
@@ -419,18 +419,18 @@ export async function getWonDealsWithLeads() {
 
   return db
     .select({
-      dealId: deals.id,
-      amountPln: deals.amountPln,
-      description: deals.description,
-      closedAt: deals.closedAt,
+      dealId: revenueRecords.id,
+      amountPln: revenueRecords.amountPln,
+      description: revenueRecords.description,
+      closedAt: revenueRecords.closedAt,
       leadId: leads.id,
       leadName: leads.name,
       company: leads.company,
       pipelineStage: leads.pipelineStage,
       tags: leads.tags,
     })
-    .from(deals)
-    .leftJoin(leads, eq(deals.leadId, leads.id))
-    .where(eq(deals.organizationId, organizationId))
-    .orderBy(desc(deals.closedAt));
+    .from(revenueRecords)
+    .leftJoin(leads, eq(revenueRecords.leadId, leads.id))
+    .where(eq(revenueRecords.organizationId, organizationId))
+    .orderBy(desc(revenueRecords.closedAt));
 }

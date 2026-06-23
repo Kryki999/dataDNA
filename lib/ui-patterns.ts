@@ -10,7 +10,11 @@ export const SECTION_LABEL =
 export const EYEBROW =
   "text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground";
 
-export const PAGE_TITLE = "text-xl font-semibold tracking-tight text-foreground";
+export const PAGE_TITLE = "font-display text-xl font-semibold tracking-tight text-foreground";
+
+export const CARD_TITLE = "font-display text-sm font-semibold tracking-tight text-foreground";
+
+export const MODAL_TITLE = "font-display text-lg font-semibold tracking-tight text-foreground";
 
 export const DATA_HERO =
   "font-mono text-3xl font-semibold tabular-nums tracking-tight text-foreground";

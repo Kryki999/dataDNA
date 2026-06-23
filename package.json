@@ -10,6 +10,7 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "db:migrate-v3": "tsx scripts/migrate-v3.ts",
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {

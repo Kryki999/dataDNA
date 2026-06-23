@@ -1,7 +1,7 @@
 import {
-  Archive,
   BarChart3,
   Calendar,
+  Database,
   Kanban,
   Target,
   User,
@@ -10,10 +10,10 @@ import {
 export const DASHBOARD_NAV = [
   { id: "profil", href: "/profil", title: "Profil", icon: User },
   { id: "klienci", href: "/klienci", title: "Klienci", icon: Kanban },
+  { id: "baza", href: "/baza", title: "Baza klientów", icon: Database },
   { id: "zasiegi", href: "/zasiegi", title: "Zasięgi", icon: BarChart3 },
   { id: "zyski", href: "/zyski", title: "Zyski", icon: Target },
   { id: "kalendarz", href: "/kalendarz", title: "Planner", icon: Calendar },
-  { id: "archiwum", href: "/archiwum", title: "Archiwum", icon: Archive },
 ] as const;
 
 export type DashboardNavId = (typeof DASHBOARD_NAV)[number]["id"];

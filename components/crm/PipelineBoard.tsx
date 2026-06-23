@@ -12,16 +12,17 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { toast } from "sonner";
-import { updateLeadStage } from "@/lib/actions/leads";
 import {
-  ACTIVE_PIPELINE_STAGES,
-  ARCHIVE_STAGES,
-  PIPELINE_COLUMNS,
-  type Lead,
-  type LeadWithMeta,
-  type PipelineStageId,
-} from "@/lib/crm/pipeline";
-import type { CurrentUser } from "@/components/crm/PipelineCard";
+  getActivePipelineDealsWithMeta,
+  updatePipelineDealStatus,
+  type PipelineDealWithMeta,
+} from "@/lib/actions/pipeline-deals";
+import {
+  CLOSED_PIPELINE_DEAL_STATUSES,
+  PIPELINE_DEAL_COLUMNS,
+  type PipelineDealStatus,
+} from "@/lib/crm/pipeline-deals";
+import type { CurrentUser } from "@/lib/crm/current-user";
 import { PipelineColumn, PipelineColumnStatic } from "./PipelineColumn";
 import { PipelineCardOverlay } from "./PipelineCard";
 import {
@@ -30,27 +31,29 @@ import {
 } from "./PipelineOutcomeZone";
 import { useMounted } from "@/hooks/use-mounted";
 
+const OUTCOME_IDS = CLOSED_PIPELINE_DEAL_STATUSES;
+
 type PipelineBoardProps = {
-  leads: LeadWithMeta[];
+  deals: PipelineDealWithMeta[];
   currentUser?: CurrentUser;
-  onOpenLead: (lead: Lead) => void;
-  onLeadUpdated: (lead: Lead) => void;
-  onLeadArchived: (leadId: string) => void;
-  onAddLead: (stage: PipelineStageId) => void;
-  selectedLeadId?: string | null;
+  onOpenDeal: (deal: PipelineDealWithMeta) => void;
+  onDealClosed: (dealId: string) => void;
+  onRefresh: () => void;
+  selectedDealId?: string | null;
 };
 
 export function PipelineBoard({
-  leads: initialLeads,
+  deals: initialDeals,
   currentUser,
-  onOpenLead,
-  onLeadUpdated,
-  onLeadArchived,
-  onAddLead,
-  selectedLeadId,
+  onOpenDeal,
+  onDealClosed,
+  onRefresh,
+  selectedDealId,
 }: PipelineBoardProps) {
-  const [leads, setLeads] = useState(initialLeads);
-  const [activeLead, setActiveLead] = useState<LeadWithMeta | null>(null);
+  const [deals, setDeals] = useState(initialDeals);
+  const [activeDeal, setActiveDeal] = useState<PipelineDealWithMeta | null>(
+    null,
+  );
   const [, startTransition] = useTransition();
   const mounted = useMounted();
 
@@ -59,70 +62,67 @@ export function PipelineBoard({
   );
 
   const columns = useMemo(() => {
-    return PIPELINE_COLUMNS.map((column) => ({
+    return PIPELINE_DEAL_COLUMNS.map((column) => ({
       ...column,
-      leads: leads.filter((lead) => lead.pipelineStage === column.id),
+      deals: deals.filter((deal) => deal.status === column.id),
     }));
-  }, [leads]);
+  }, [deals]);
 
   useEffect(() => {
-    setLeads(initialLeads);
-  }, [initialLeads]);
-
-  function handleLeadUpdated(lead: Lead) {
-    setLeads((current) =>
-      current.map((item) =>
-        item.id === lead.id ? { ...item, ...lead } : item,
-      ),
-    );
-    onLeadUpdated(lead);
-  }
+    setDeals(initialDeals);
+  }, [initialDeals]);
 
   function handleDragStart(event: DragStartEvent) {
-    const lead = leads.find((item) => item.id === event.active.id);
-    if (lead) setActiveLead(lead);
+    const deal = deals.find((item) => item.id === event.active.id);
+    if (deal) setActiveDeal(deal);
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    setActiveLead(null);
-    const leadId = String(event.active.id);
+    setActiveDeal(null);
+    const dealId = String(event.active.id);
     const overId = event.over?.id;
     if (!overId) return;
 
-    const nextStage = String(overId) as PipelineStageId;
-    const validStages = [...ACTIVE_PIPELINE_STAGES, ...ARCHIVE_STAGES];
-    if (!validStages.includes(nextStage)) return;
+    const nextStatus = String(overId) as PipelineDealStatus;
+    const valid = [
+      ...PIPELINE_DEAL_COLUMNS.map((c) => c.id),
+      ...OUTCOME_IDS,
+    ];
+    if (!valid.includes(nextStatus)) return;
 
-    const lead = leads.find((item) => item.id === leadId);
-    if (!lead || lead.pipelineStage === nextStage) return;
+    const deal = deals.find((item) => item.id === dealId);
+    if (!deal || deal.status === nextStatus) return;
 
-    const isClosing = nextStage === "won" || nextStage === "lost";
+    const isClosing = OUTCOME_IDS.includes(
+      nextStatus as (typeof OUTCOME_IDS)[number],
+    );
 
     if (isClosing) {
-      setLeads((current) => current.filter((item) => item.id !== leadId));
+      setDeals((current) => current.filter((item) => item.id !== dealId));
     } else {
-      setLeads((current) =>
+      setDeals((current) =>
         current.map((item) =>
-          item.id === leadId ? { ...item, pipelineStage: nextStage } : item,
+          item.id === dealId ? { ...item, status: nextStatus } : item,
         ),
       );
     }
 
     startTransition(async () => {
       try {
-        await updateLeadStage(leadId, nextStage);
-        if (nextStage === "won") {
-          toast.success("Projekt zrealizowany — dodano do archiwum");
-          onLeadArchived(leadId);
-        } else if (nextStage === "lost") {
-          toast.success("Współpraca zakończona — przeniesiono do archiwum");
-          onLeadArchived(leadId);
+        await updatePipelineDealStatus(dealId, nextStatus);
+        if (nextStatus === "closed_won") {
+          toast.success("Projekt zrealizowany");
+          onDealClosed(dealId);
+        } else if (nextStatus === "closed_lost") {
+          toast.success("Współpraca zakończona");
+          onDealClosed(dealId);
         } else {
           toast.success("Etap zaktualizowany");
         }
       } catch {
         toast.error("Nie udało się zmienić etapu");
-        setLeads(initialLeads);
+        const refreshed = await getActivePipelineDealsWithMeta();
+        setDeals(refreshed);
       }
     });
   }
@@ -139,36 +139,33 @@ export function PipelineBoard({
             id={column.id}
             label={column.label}
             accentColor={column.accent}
-            leads={column.leads}
+            deals={column.deals}
             currentUser={currentUser}
-            onOpenLead={onOpenLead}
-            onLeadUpdated={handleLeadUpdated}
-            onAddLead={onAddLead}
-            selectedLeadId={selectedLeadId}
+            onOpenDeal={onOpenDeal}
+            onDealCreated={onRefresh}
+            selectedDealId={selectedDealId}
           />
         ))}
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <OutcomeZone
-          id="lost"
+          id="closed_lost"
           label="Koniec współpracy"
-          description="Upuść tutaj — klient trafia do archiwum"
+          description="Karta znika z tablicy — profil zostaje w bazie"
           variant="lost"
         />
         <OutcomeZone
-          id="won"
+          id="closed_won"
           label="Zrealizowano"
-          description="Upuść tutaj — projekt trafia do archiwum"
+          description="Projekt zamknięty — historia w profilu klienta"
           variant="won"
         />
       </div>
     </>
   );
 
-  if (!mounted) {
-    return board;
-  }
+  if (!mounted) return board;
 
   return (
     <DndContext
@@ -178,9 +175,8 @@ export function PipelineBoard({
       onDragEnd={handleDragEnd}
     >
       {board}
-
       <DragOverlay>
-        {activeLead ? <PipelineCardOverlay lead={activeLead} /> : null}
+        {activeDeal ? <PipelineCardOverlay deal={activeDeal} /> : null}
       </DragOverlay>
     </DndContext>
   );

@@ -6,7 +6,7 @@ const DASHBOARD_PATHS = [
   "/zasiegi",
   "/zyski",
   "/kalendarz",
-  "/archiwum",
+  "/baza",
 ] as const;
 
 export function revalidateDashboard() {

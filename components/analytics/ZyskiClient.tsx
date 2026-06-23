@@ -4,23 +4,23 @@ import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { RevenueHero } from "@/components/analytics/RevenueHero";
 import { RevenueAnalyticsChart } from "@/components/analytics/RevenueAnalyticsChart";
 import {
-  RevenueDealsTable,
-  type RevenueDealRow,
-} from "@/components/analytics/RevenueDealsTable";
+  RevenueClientGrid,
+  type RevenueClientRow,
+} from "@/components/analytics/RevenueClientGrid";
 import type { RevenueDealPoint } from "@/lib/revenue-chart";
 
 type ZyskiClientProps = {
   revenue: { total: number };
   growth: { percentChange: number; thisMonth: number; lastMonth: number };
   chartDeals: RevenueDealPoint[];
-  deals: RevenueDealRow[];
+  clients: RevenueClientRow[];
 };
 
 export function ZyskiClient({
   revenue,
   growth,
   chartDeals,
-  deals,
+  clients,
 }: ZyskiClientProps) {
   return (
     <DashboardPage wide className="space-y-10">
@@ -30,7 +30,7 @@ export function ZyskiClient({
         thisMonth={growth.thisMonth}
       />
       <RevenueAnalyticsChart deals={chartDeals} />
-      <RevenueDealsTable deals={deals} />
+      <RevenueClientGrid clients={clients} />
     </DashboardPage>
   );
 }
