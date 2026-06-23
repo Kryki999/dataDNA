@@ -11,6 +11,7 @@ import {
   generateDaySlots,
   GRID_HOURS,
 } from "@/components/planner/planner-utils";
+import { EYEBROW } from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
 
 type PlannerDayColumnProps = {
@@ -40,23 +41,21 @@ export function PlannerDayColumn({
   return (
     <div
       className={cn(
-        "relative min-w-0 flex-1 border-r border-zinc-800/40 last:border-r-0",
-        today && "bg-sky-500/5",
+        "relative min-w-[152px] flex-1 border-r border-dna-border/30 last:border-r-0",
+        today ? "bg-primary/[0.07]" : "bg-dna-inset/20",
       )}
     >
       <div
         className={cn(
-          "sticky top-0 z-20 border-b border-zinc-800 bg-zinc-950/90 px-2 py-2 text-center backdrop-blur-sm",
-          today && "border-sky-500/20",
+          "sticky top-(--header-height) z-20 flex h-14 flex-col items-center justify-center border-b border-dna-border/40 px-2",
+          today ? "bg-primary/10" : "bg-dna-surface/80 backdrop-blur-sm",
         )}
       >
-        <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
-          {header.short}
-        </p>
+        <p className={cn(EYEBROW, "text-[10px]")}>{header.short}</p>
         <p
           className={cn(
-            "text-sm font-semibold tabular-nums",
-            today ? "text-sky-400" : "text-zinc-200",
+            "text-lg font-semibold tabular-nums leading-none",
+            today ? "text-primary" : "text-foreground",
           )}
         >
           {header.day}
@@ -70,7 +69,7 @@ export function PlannerDayColumn({
         {GRID_HOURS.map((hour) => (
           <div
             key={hour}
-            className="absolute inset-x-0 border-b border-zinc-800/20"
+            className="absolute inset-x-0 border-b border-dna-border/15"
             style={{
               top: (hour - GRID_HOURS[0]!) * HOUR_HEIGHT_PX,
               height: HOUR_HEIGHT_PX,

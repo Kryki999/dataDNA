@@ -10,6 +10,8 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
+import { INPUT_SURFACE } from "@/lib/ui-patterns";
+import { cn } from "@/lib/utils";
 import { Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -17,7 +19,7 @@ type PlannerBacklogDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   events: PlannerEventWithMeta[];
-  onQuickAdd: (title: string) => void;
+  onQuickAddClick: () => void;
   onSchedule: (eventId: string) => void;
 };
 
@@ -25,7 +27,7 @@ export function PlannerBacklogDrawer({
   open,
   onOpenChange,
   events,
-  onQuickAdd,
+  onQuickAddClick,
   onSchedule,
 }: PlannerBacklogDrawerProps) {
   const [query, setQuery] = useState("");
@@ -42,18 +44,18 @@ export function PlannerBacklogDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="border-zinc-800 bg-zinc-950">
+      <DrawerContent className="border-dna-border/40 bg-dna-surface">
         <DrawerHeader>
           <DrawerTitle>Backlog</DrawerTitle>
         </DrawerHeader>
         <div className="px-4 pb-2">
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 size-4 text-zinc-500" />
+            <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Szukaj zadania…"
-              className="border-zinc-800 bg-zinc-900 pl-9"
+              className={cn(INPUT_SURFACE, "pl-9")}
             />
           </div>
         </div>
@@ -70,14 +72,11 @@ export function PlannerBacklogDrawer({
             />
           ))}
         </div>
-        <div className="border-t border-zinc-800 p-4">
+        <div className="border-t border-dna-border p-4">
           <Button
             variant="outline"
-            className="w-full border-zinc-800"
-            onClick={() => {
-              const title = window.prompt("Tytuł zadania:");
-              if (title?.trim()) onQuickAdd(title.trim());
-            }}
+            className="w-full border-dna-border"
+            onClick={onQuickAddClick}
           >
             <Plus className="size-4" />
             Szybkie dodanie

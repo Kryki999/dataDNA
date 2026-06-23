@@ -17,8 +17,8 @@ export function PlannerTimeSlot({ id, className, style }: PlannerTimeSlotProps) 
       ref={setNodeRef}
       style={style}
       className={cn(
-        "absolute inset-x-0 border-b border-zinc-800/20",
-        isOver && "bg-sky-500/10",
+        "absolute inset-x-0",
+        isOver && "bg-primary/15 ring-1 ring-inset ring-primary/30",
         className,
       )}
     />

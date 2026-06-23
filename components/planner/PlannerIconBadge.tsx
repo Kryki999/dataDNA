@@ -28,7 +28,7 @@ export function PlannerIconBadge({
   return (
     <span
       className={cn(
-        "inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-700 bg-zinc-900 text-sky-400",
+        "inline-flex size-5 shrink-0 items-center justify-center rounded border border-dna-border bg-dna-trough text-primary",
         className,
       )}
     >

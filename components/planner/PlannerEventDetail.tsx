@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { format } from "date-fns";
-import { FileText, Trash2, Upload } from "lucide-react";
+import { pl } from "date-fns/locale";
+import { ChevronDown, FileText, Link2, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   deletePlannerAttachment,
@@ -19,7 +20,6 @@ import { PlannerIconBadge } from "@/components/planner/PlannerIconBadge";
 import { leadLabel } from "@/components/planner/planner-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { EYEBROW, INPUT_SURFACE, SURFACE_WELL } from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
 
 type PlannerEventDetailProps = {
@@ -65,6 +66,9 @@ export function PlannerEventDetail({
   const [title, setTitle] = useState(event.title);
   const [description, setDescription] = useState(event.description);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showCrmLink, setShowCrmLink] = useState(Boolean(event.leadId));
+  const [showPreview, setShowPreview] = useState(false);
+  const [editingTime, setEditingTime] = useState(false);
   const [, startUpload] = useTransition();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -72,7 +76,10 @@ export function PlannerEventDetail({
   useEffect(() => {
     setTitle(event.title);
     setDescription(event.description);
-  }, [event.id, event.title, event.description]);
+    setShowCrmLink(Boolean(event.leadId));
+    setEditingTime(false);
+    setShowPreview(false);
+  }, [event.id, event.title, event.description, event.leadId]);
 
   const debouncedPatch = useCallback(
     (patch: Parameters<typeof onPatch>[1]) => {
@@ -88,6 +95,13 @@ export function PlannerEventDetail({
   const endLocal = event.endsAt
     ? format(new Date(event.endsAt), "yyyy-MM-dd'T'HH:mm")
     : "";
+
+  const timeLabel =
+    event.dueAt && event.endsAt
+      ? `${format(new Date(event.dueAt), "d MMM, HH:mm", { locale: pl })} – ${format(new Date(event.endsAt), "HH:mm", { locale: pl })}`
+      : event.dueAt
+        ? format(new Date(event.dueAt), "d MMM yyyy, HH:mm", { locale: pl })
+        : "Bez terminu";
 
   function handleDueChange(value: string) {
     if (!value) return;
@@ -137,72 +151,96 @@ export function PlannerEventDetail({
   }
 
   return (
-    <div className="flex max-h-[min(85vh,720px)] flex-col overflow-hidden">
-      <div className="space-y-4 border-b border-zinc-800 p-5">
-        <div className="flex items-start gap-3">
-          <PlannerIconBadge icon={event.icon} className="size-8" />
-          <div className="min-w-0 flex-1 space-y-3">
-            <Input
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                debouncedPatch({ title: e.target.value });
-              }}
-              className="border-transparent bg-transparent px-0 text-lg font-semibold text-zinc-100 focus-visible:border-zinc-700"
-            />
-            {leadLabel(event) ? (
-              <span className="inline-flex rounded border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-xs text-sky-400">
-                {leadLabel(event)}
-              </span>
+    <div>
+      <div className="space-y-4 border-b border-dna-border p-5">
+        <div className="flex items-start justify-between gap-2">
+          <p className={EYEBROW}>
+            {event.dueAt ? "Zaplanowane" : "Backlog"}
+          </p>
+          <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={onClose}>
+            <X className="size-4" />
+          </Button>
+        </div>
+
+        <Input
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            debouncedPatch({ title: e.target.value });
+          }}
+          className="border-transparent bg-transparent px-0 text-lg font-semibold text-foreground focus-visible:border-dna-border"
+        />
+
+        {event.dueAt ? (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => setEditingTime((v) => !v)}
+              className={cn(SURFACE_WELL, "flex w-full items-center justify-between px-3 py-2 text-left text-sm")}
+            >
+              <span className="tabular-nums text-foreground">{timeLabel}</span>
+              <ChevronDown
+                className={cn(
+                  "size-4 text-muted-foreground transition-transform",
+                  editingTime && "rotate-180",
+                )}
+              />
+            </button>
+            {editingTime ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Input
+                  type="datetime-local"
+                  value={dueLocal}
+                  onChange={(e) => handleDueChange(e.target.value)}
+                  className={INPUT_SURFACE}
+                />
+                <Input
+                  type="datetime-local"
+                  value={endLocal}
+                  onChange={(e) => handleEndChange(e.target.value)}
+                  className={INPUT_SURFACE}
+                  disabled={!event.dueAt}
+                />
+              </div>
             ) : null}
           </div>
+        ) : null}
+
+        <div className="space-y-2">
+          <p className={EYEBROW}>Typ</p>
+          <div className="flex flex-wrap gap-1.5">
+            {PLANNER_ICONS.map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onPatch(event.id, { icon: key })}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-medium transition-colors",
+                  event.icon === key
+                    ? "border-primary/50 bg-primary/10 text-primary"
+                    : "border-dna-border/40 bg-dna-inset text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <PlannerIconBadge icon={key} className="size-4" />
+                {ICON_LABELS[key]}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label className="text-xs text-zinc-500">Start</Label>
-            <Input
-              type="datetime-local"
-              value={dueLocal}
-              onChange={(e) => handleDueChange(e.target.value)}
-              className="border-zinc-800 bg-zinc-900"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-zinc-500">Koniec</Label>
-            <Input
-              type="datetime-local"
-              value={endLocal}
-              onChange={(e) => handleEndChange(e.target.value)}
-              className="border-zinc-800 bg-zinc-900"
-              disabled={!event.dueAt}
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label className="text-xs text-zinc-500">Typ</Label>
-            <Select
-              value={event.icon}
-              onValueChange={(value) =>
-                onPatch(event.id, { icon: value as PlannerIcon })
-              }
+        <div className="space-y-2">
+          {!showCrmLink ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-dna-border/40"
+              onClick={() => setShowCrmLink(true)}
             >
-              <SelectTrigger className="border-zinc-800 bg-zinc-900">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PLANNER_ICONS.map((icon) => (
-                  <SelectItem key={icon} value={icon}>
-                    {ICON_LABELS[icon]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-zinc-500">Klient (CRM)</Label>
+              <Link2 className="size-3.5" />
+              Powiąż z klientem
+            </Button>
+          ) : (
             <Select
               value={event.leadId ?? "none"}
               onValueChange={(value) =>
@@ -211,11 +249,11 @@ export function PlannerEventDetail({
                 })
               }
             >
-              <SelectTrigger className="border-zinc-800 bg-zinc-900">
-                <SelectValue placeholder="Brak" />
+              <SelectTrigger className={INPUT_SURFACE}>
+                <SelectValue placeholder="Wybierz klienta" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Brak</SelectItem>
+                <SelectItem value="none">Brak powiązania</SelectItem>
                 {leads.map((lead) => (
                   <SelectItem key={lead.id} value={lead.id}>
                     {lead.company ?? lead.name}
@@ -223,13 +261,16 @@ export function PlannerEventDetail({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          )}
+          {leadLabel(event) ? (
+            <p className="text-xs text-primary/90">{leadLabel(event)}</p>
+          ) : null}
         </div>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-5">
+      <div className="space-y-5 p-5">
         <div className="space-y-2">
-          <Label className="text-xs text-zinc-500">Opis</Label>
+          <p className={EYEBROW}>Opis</p>
           <Textarea
             value={description}
             onChange={(e) => {
@@ -237,12 +278,23 @@ export function PlannerEventDetail({
               debouncedPatch({ description: e.target.value });
             }}
             rows={4}
-            className="border-zinc-800 bg-zinc-900"
+            className={INPUT_SURFACE}
             placeholder="Notatki, **pogrubienie**, *kursywa*"
           />
           {description ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-muted-foreground"
+              onClick={() => setShowPreview((v) => !v)}
+            >
+              {showPreview ? "Ukryj podgląd" : "Podgląd"}
+            </Button>
+          ) : null}
+          {showPreview && description ? (
             <div
-              className="rounded-md border border-zinc-800 bg-zinc-900/50 p-3 text-sm text-zinc-300"
+              className={cn(SURFACE_WELL, "p-3 text-sm text-foreground")}
               dangerouslySetInnerHTML={{
                 __html: renderSimpleMarkdown(description),
               }}
@@ -251,11 +303,9 @@ export function PlannerEventDetail({
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs text-zinc-500">Załączniki</Label>
+          <p className={EYEBROW}>Załączniki</p>
           <div
-            className={cn(
-              "flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-zinc-700 bg-zinc-900/40 px-4 py-8 transition-colors hover:border-sky-500/40 hover:bg-sky-500/5",
-            )}
+            className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-dna-border/40 bg-dna-inset px-4 py-6 transition-colors hover:border-primary/40 hover:bg-primary/5"
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
@@ -263,9 +313,9 @@ export function PlannerEventDetail({
             }}
             onClick={() => fileInputRef.current?.click()}
           >
-            <Upload className="size-5 text-zinc-500" />
-            <p className="mt-2 text-xs text-zinc-400">
-              Przeciągnij pliki lub kliknij, aby dodać
+            <Upload className="size-5 text-muted-foreground" />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Przeciągnij pliki lub kliknij
             </p>
             <input
               ref={fileInputRef}
@@ -276,11 +326,11 @@ export function PlannerEventDetail({
             />
           </div>
           {event.attachments.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2">
               {event.attachments.map((attachment) => (
                 <div
                   key={attachment.id}
-                  className="group relative overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900"
+                  className="group relative overflow-hidden rounded-lg bg-dna-inset"
                 >
                   {attachment.mimeType.startsWith("image/") ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -290,7 +340,7 @@ export function PlannerEventDetail({
                       className="aspect-square w-full object-cover"
                     />
                   ) : (
-                    <div className="flex aspect-square flex-col items-center justify-center gap-2 p-2 text-zinc-400">
+                    <div className="flex aspect-square flex-col items-center justify-center gap-2 p-2 text-muted-foreground">
                       <FileText className="size-8" />
                       <span className="line-clamp-2 text-center text-[10px]">
                         {attachment.fileName}
@@ -300,7 +350,7 @@ export function PlannerEventDetail({
                   <button
                     type="button"
                     onClick={() => handleRemoveAttachment(attachment.id)}
-                    className="absolute right-1 top-1 rounded bg-zinc-950/80 p-1 text-rose-400 opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute right-1 top-1 rounded bg-dna-surface p-1 text-rose-400 opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <Trash2 className="size-3" />
                   </button>
@@ -311,9 +361,9 @@ export function PlannerEventDetail({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-t border-zinc-800 p-5">
+      <div className="flex gap-3 border-t border-dna-border p-5">
         <Button
-          className="flex-1 bg-sky-500 text-zinc-950 hover:bg-sky-400"
+          className="h-12 flex-1"
           onClick={() => {
             onComplete(event.id);
             onClose();
@@ -325,21 +375,22 @@ export function PlannerEventDetail({
         {!confirmDelete ? (
           <Button
             variant="outline"
-            className="border-rose-500/40 text-rose-400 hover:bg-rose-500/10"
+            className="h-12 w-12 shrink-0 border-rose-500/40 text-rose-400 hover:bg-rose-500/10"
             onClick={() => setConfirmDelete(true)}
+            aria-label="Usuń zadanie"
           >
             <Trash2 className="size-4" />
-            Usuń
           </Button>
         ) : (
           <Button
             variant="destructive"
+            className="h-12 shrink-0"
             onClick={() => {
               onDelete(event.id);
               onClose();
             }}
           >
-            Potwierdź usunięcie
+            Usuń
           </Button>
         )}
       </div>

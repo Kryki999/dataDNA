@@ -2,6 +2,7 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import { motion } from "framer-motion";
+import { GripVertical } from "lucide-react";
 import type { PlannerEventWithMeta } from "@/lib/planner/types";
 import { PlannerIconBadge } from "@/components/planner/PlannerIconBadge";
 import {
@@ -12,6 +13,7 @@ import {
   leadLabel,
 } from "@/components/planner/planner-utils";
 import { useEventResize } from "@/components/planner/hooks/useEventResize";
+import { SURFACE_CARD_NESTED } from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
 
 type PlannerEventBlockProps = {
@@ -49,22 +51,27 @@ export function PlannerEventBlock({
     onResize,
   });
 
+  const heightPx =
+    dueAt && endsAt && !compact
+      ? Math.max(getEventHeightPx(dueAt, endsAt), 52)
+      : 52;
+  const isShort = heightPx < 72;
+
   const blockStyle: React.CSSProperties | undefined =
     dueAt && endsAt && !compact
       ? {
           top: getEventTopPx(dueAt),
-          height: getEventHeightPx(dueAt, endsAt),
+          height: heightPx,
           transform: transform
             ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
             : undefined,
-          boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.03)",
         }
       : undefined;
 
   if (isSelected) {
     return (
       <div
-        className="absolute inset-x-1 invisible"
+        className="absolute inset-x-1.5 invisible"
         style={blockStyle}
         aria-hidden
       />
@@ -73,40 +80,60 @@ export function PlannerEventBlock({
 
   const content = (
     <>
-      <div className="flex items-start justify-between gap-1">
+      <div className="flex items-center gap-2">
         <PlannerIconBadge icon={event.icon} />
-        {dueAt && (
-          <span className="text-[10px] tabular-nums text-zinc-400">
+        {dueAt ? (
+          <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
             {formatEventTime(dueAt)}
           </span>
-        )}
+        ) : null}
       </div>
       <p
         className={cn(
-          "mt-1 truncate text-xs font-semibold text-zinc-100",
-          completed && "line-through text-zinc-500",
+          "mt-1 line-clamp-2 text-sm font-semibold leading-snug text-foreground",
+          isShort && "mt-0.5 line-clamp-1",
+          completed && "line-through text-muted-foreground",
         )}
       >
         {event.title}
       </p>
-      {event.description ? (
-        <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-zinc-500">
+      {!isShort && event.description ? (
+        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
           {event.description}
         </p>
       ) : null}
-      {leadLabel(event) ? (
-        <p className="mt-1 truncate text-[10px] text-sky-400/80">
+      {!isShort && leadLabel(event) ? (
+        <p className="mt-1 truncate text-[10px] font-medium text-primary/90">
           {leadLabel(event)}
         </p>
       ) : null}
       {!completed && dueAt && endsAt && !compact && (
         <div
-          className="absolute inset-x-0 bottom-0 h-1 cursor-ns-resize bg-transparent hover:bg-sky-500/30"
+          className="absolute inset-x-0 bottom-0 z-10 h-2 cursor-ns-resize bg-transparent hover:bg-primary/25"
           onPointerDown={resize.onPointerDown}
+          onClick={(e) => e.stopPropagation()}
         />
       )}
+      {!completed && !compact ? (
+        <GripVertical className="absolute bottom-1.5 right-1.5 size-3 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground/40" />
+      ) : null}
     </>
   );
+
+  const cardClass = cn(
+    SURFACE_CARD_NESTED,
+    "group absolute inset-x-1.5 z-10 overflow-hidden p-2.5",
+    "cursor-grab active:cursor-grabbing",
+    completed && "opacity-55",
+    isDragging && "opacity-40",
+    compact && "relative inset-auto h-auto",
+  );
+
+  function handleCardClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (resize.shouldBlockClick()) return;
+    onClick();
+  }
 
   if (useLayout && !isDragging && !compact) {
     return (
@@ -114,15 +141,8 @@ export function PlannerEventBlock({
         layoutId={`planner-event-${event.id}`}
         ref={setNodeRef}
         style={blockStyle}
-        className={cn(
-          "group absolute inset-x-1 z-10 overflow-hidden rounded-md border border-zinc-800 bg-zinc-900/80 p-2 shadow-sm",
-          "cursor-grab active:cursor-grabbing",
-          completed && "opacity-50",
-        )}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
+        className={cardClass}
+        onClick={handleCardClick}
         {...listeners}
         {...attributes}
       >
@@ -135,17 +155,8 @@ export function PlannerEventBlock({
     <div
       ref={setNodeRef}
       style={blockStyle}
-      className={cn(
-        "group absolute inset-x-1 z-10 overflow-hidden rounded-md border border-zinc-800 bg-zinc-900/80 p-2 shadow-sm",
-        "cursor-grab active:cursor-grabbing",
-        completed && "opacity-50",
-        isDragging && "opacity-40",
-        compact && "relative inset-auto h-auto",
-      )}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
+      className={cardClass}
+      onClick={handleCardClick}
       {...listeners}
       {...attributes}
     >

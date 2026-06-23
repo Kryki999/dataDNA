@@ -15,6 +15,8 @@ import {
   type ReachChannelKey,
 } from "@/lib/reach-channels";
 import type { ReachDay, ReachSummary } from "@/lib/types/reach";
+import { SURFACE_CARD, SURFACE_OVERLAY, EYEBROW, SURFACE_WELL } from "@/lib/ui-patterns";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
 
 type ReachChannelGridProps = {
@@ -49,7 +51,7 @@ function ChannelIcon({
 function TrendBadge({ trend }: { trend: ReturnType<typeof getChannelTrend> }) {
   if (trend.direction === "flat") {
     return (
-      <span className="inline-flex items-center gap-0.5 text-xs text-zinc-500">
+      <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
         <Minus className="size-3" />
         0%
       </span>
@@ -100,17 +102,17 @@ function ChannelCardContent({
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div
-            className="flex size-8 shrink-0 items-center justify-center border border-zinc-800 bg-zinc-900"
+            className="flex size-8 shrink-0 items-center justify-center rounded-md bg-dna-inset"
             style={{ color: channel.color }}
           >
             <ChannelIcon channel={channel} className="size-4" />
           </div>
           <div>
-            <h3 className="font-semibold tracking-tight text-zinc-100">
+            <h3 className="font-semibold tracking-tight text-foreground">
               {channel.label}
             </h3>
             {!expanded && (
-              <p className="mt-0.5 text-xs text-zinc-500">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 {today.toLocaleString("pl-PL")} dziś ·{" "}
                 {week.toLocaleString("pl-PL")} tydz.
               </p>
@@ -123,7 +125,7 @@ function ChannelCardContent({
             <button
               type="button"
               onClick={onClose}
-              className="flex size-8 items-center justify-center border border-zinc-800 bg-zinc-900 text-zinc-400 transition-colors hover:border-zinc-700 hover:text-zinc-100"
+              className="flex size-8 items-center justify-center rounded-md bg-dna-inset text-muted-foreground transition-colors hover:bg-dna-inset/80 hover:text-foreground"
               aria-label="Zamknij"
             >
               <X className="size-4" />
@@ -142,18 +144,18 @@ function ChannelCardContent({
       </div>
 
       {expanded ? (
-        <div className="space-y-6 border-t border-zinc-800 pt-6">
+        <div className="space-y-6 border-t border-dna-border pt-6">
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: "Dziś", value: today },
               { label: "Tydzień", value: week },
-              { label: "All-time", value: allTime },
+              { label: "Łącznie", value: allTime },
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="border border-zinc-800 bg-zinc-900/50 px-3 py-2.5"
+                className={cn(SURFACE_WELL, "px-3 py-2.5")}
               >
-                <p className="text-[10px] uppercase tracking-wider text-zinc-500">
+                <p className={EYEBROW}>
                   {stat.label}
                 </p>
                 <p
@@ -168,7 +170,7 @@ function ChannelCardContent({
 
           {channel.id === "coldCalls" && (
             <div className="space-y-3">
-              <p className="text-xs uppercase tracking-wide text-zinc-500">
+              <p className={EYEBROW}>
                 Szybki log
               </p>
               <LogCallButton
@@ -181,19 +183,19 @@ function ChannelCardContent({
           )}
 
           <div className="space-y-3">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">
+            <p className={EYEBROW}>
               {channel.id === "coldCalls" ? "Zbiorczy wpis" : "Dodaj dane"}
             </p>
             <ChannelReachForm channel={channel} />
           </div>
         </div>
       ) : (
-        <p className="text-sm text-zinc-400">
-          <span className="font-mono font-medium tabular-nums text-zinc-200">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-mono font-medium tabular-nums text-foreground">
             {today.toLocaleString("pl-PL")}
           </span>
-          <span className="mx-1.5 text-zinc-600">·</span>
-          <span className="text-zinc-500">
+          <span className="mx-1.5 text-muted-foreground/50">·</span>
+          <span className="text-muted-foreground">
             {week.toLocaleString("pl-PL")} w tym tygodniu
           </span>
         </p>
@@ -209,6 +211,8 @@ export function ReachChannelGrid({
   onOptimisticCallLog,
 }: ReachChannelGridProps) {
   const [selectedId, setSelectedId] = useState<ReachChannelKey | null>(null);
+
+  const reducedMotion = useReducedMotion();
 
   const close = useCallback(() => setSelectedId(null), []);
 
@@ -234,10 +238,8 @@ export function ReachChannelGrid({
       <section className="space-y-4">
         <div className="flex items-baseline justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-wide text-zinc-500">
-              Kanały
-            </p>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className={EYEBROW}>Kanały</p>
+            <p className="mt-1 text-sm text-muted-foreground">
               Kliknij kartę, aby zobaczyć szczegóły i dodać dane
             </p>
           </div>
@@ -257,16 +259,21 @@ export function ReachChannelGrid({
                 layoutId={`reach-channel-${channel.id}`}
                 onClick={() => setSelectedId(channel.id)}
                 className={cn(
-                  "group cursor-pointer border border-zinc-800 bg-zinc-950 p-4 text-left transition-colors",
-                  "hover:border-zinc-700 hover:bg-zinc-900/60",
-                  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-600",
+                  SURFACE_CARD,
+                  "group cursor-pointer p-4 text-left transition-colors",
+                  "hover:brightness-105",
+                  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-dna-border",
                 )}
                 style={{
                   boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.03)`,
                 }}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                whileHover={reducedMotion ? undefined : { scale: 1.01 }}
+                whileTap={reducedMotion ? undefined : { scale: 0.99 }}
+                transition={
+                  reducedMotion
+                    ? { duration: 0 }
+                    : { type: "spring", stiffness: 400, damping: 30 }
+                }
               >
                 <ChannelCardContent
                   channel={channel}
@@ -284,11 +291,11 @@ export function ReachChannelGrid({
           <>
             <motion.div
               key="backdrop"
-              className="fixed inset-0 z-40 bg-zinc-950/80 backdrop-blur-sm"
+              className={cn("fixed inset-0 z-40", SURFACE_OVERLAY)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: reducedMotion ? 0 : 0.2 }}
               onClick={close}
               aria-hidden
             />
@@ -298,13 +305,18 @@ export function ReachChannelGrid({
                 key={`expanded-${selectedId}`}
                 layoutId={`reach-channel-${selectedId}`}
                 className={cn(
-                  "pointer-events-auto w-full max-w-lg overflow-y-auto border border-zinc-700 bg-zinc-950 p-6",
+                  SURFACE_CARD,
+                  "pointer-events-auto w-full max-w-lg overflow-y-auto bg-dna-surface p-6",
                   "max-h-[calc(100vh-2rem)]",
                 )}
                 style={{
                   boxShadow: `0 0 60px ${selectedChannel.glowColor}, inset 0 1px 0 0 rgba(255,255,255,0.05)`,
                 }}
-                transition={{ type: "spring", stiffness: 350, damping: 32 }}
+                transition={
+                  reducedMotion
+                    ? { duration: 0 }
+                    : { type: "spring", stiffness: 350, damping: 32 }
+                }
                 onClick={(event) => event.stopPropagation()}
               >
                 <ChannelCardContent

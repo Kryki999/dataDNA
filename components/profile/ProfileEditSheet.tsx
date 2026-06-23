@@ -131,7 +131,7 @@ export function ProfileEditSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="border-zinc-800 bg-zinc-950">
+      <SheetContent className="border-dna-border/40 bg-dna-surface">
         <SheetHeader>
           <SheetTitle>Edytuj profil</SheetTitle>
         </SheetHeader>
@@ -216,7 +216,7 @@ export function ProfileEditSheet({
               type="checkbox"
               checked={profilePublic}
               onChange={(e) => setProfilePublic(e.target.checked)}
-              className="rounded border-zinc-700"
+              className="rounded border-dna-border"
             />
             Profil publiczny
           </label>

@@ -4,6 +4,8 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { NewLeadProvider } from "@/components/dashboard/new-lead-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SURFACE_CANVAS } from "@/lib/ui-patterns";
+import { cn } from "@/lib/utils";
 
 type DashboardShellProps = {
   user: {
@@ -26,7 +28,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
         }
       >
         <AppSidebar variant="inset" user={user} />
-        <SidebarInset className="bg-zinc-950">
+        <SidebarInset className={cn(SURFACE_CANVAS, "min-h-0 shadow-none")}>
           <SiteHeader />
           <div className="flex-1">{children}</div>
         </SidebarInset>

@@ -1,3 +1,5 @@
+import type { CollisionDetection } from "@dnd-kit/core";
+import { pointerWithin } from "@dnd-kit/core";
 import {
   addDays,
   addMinutes,
@@ -127,3 +129,27 @@ export const GRID_HOURS = Array.from(
   { length: GRID_END_HOUR - GRID_START_HOUR },
   (_, i) => GRID_START_HOUR + i,
 );
+
+/** Drop tylko gdy kursor jest nad strefą — bez „przyciągania” do odległych slotów kalendarza. */
+export const plannerCollisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length === 0) {
+    return [];
+  }
+
+  const backlog = pointerCollisions.find(
+    (collision) => collision.id === BACKLOG_DROP_ID,
+  );
+  if (backlog) {
+    return [backlog];
+  }
+
+  const slots = pointerCollisions.filter((collision) =>
+    String(collision.id).startsWith("slot-"),
+  );
+  if (slots.length > 0) {
+    return slots;
+  }
+
+  return pointerCollisions;
+};

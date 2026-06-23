@@ -11,7 +11,7 @@ import { getIntensityLevel } from "@/lib/constants";
 import { SECTION_LABEL } from "@/lib/ui-patterns";
 
 const INTENSITY_CLASSES = [
-  "bg-zinc-800/60",
+  "bg-dna-inset",
   "bg-primary/25",
   "bg-primary/45",
   "bg-primary/65",

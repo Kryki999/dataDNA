@@ -192,7 +192,7 @@ export function ArchiveDataTable({ leads: initialLeads }: ArchiveDataTableProps)
           <table className="w-full text-sm">
             <thead>
               {table.getHeaderGroups().map((hg) => (
-                <tr key={hg.id} className="border-b border-zinc-800">
+                <tr key={hg.id} className="border-b border-dna-border">
                   {hg.headers.map((header) => (
                     <th
                       key={header.id}
@@ -223,7 +223,7 @@ export function ArchiveDataTable({ leads: initialLeads }: ArchiveDataTableProps)
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="cursor-pointer border-b border-zinc-800/60 hover:bg-zinc-900/50"
+                    className="cursor-pointer border-b border-dna-border/30 hover:bg-dna-inset/50"
                     onClick={() => {
                       setSelectedLead(row.original);
                       setSheetOpen(true);

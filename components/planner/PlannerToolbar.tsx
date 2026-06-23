@@ -1,8 +1,8 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Filter, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SECTION_LABEL } from "@/lib/ui-patterns";
+import { EYEBROW } from "@/lib/ui-patterns";
 import { formatWeekRange } from "@/components/planner/planner-utils";
 
 type PlannerToolbarProps = {
@@ -14,6 +14,7 @@ type PlannerToolbarProps = {
   onToggleHideCompleted: () => void;
   backlogOpen: boolean;
   onToggleBacklog: () => void;
+  onAddTask: () => void;
   isMobile?: boolean;
 };
 
@@ -26,38 +27,54 @@ export function PlannerToolbar({
   onToggleHideCompleted,
   backlogOpen,
   onToggleBacklog,
+  onAddTask,
   isMobile,
 }: PlannerToolbarProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <p className={SECTION_LABEL}>Planner</p>
-      <div className="flex flex-wrap items-center gap-2">
-        {!isMobile && (
+    <header className="mb-2 space-y-4">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_auto]">
+        <div>
+          <p className={EYEBROW}>Planner</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Kalendarz i tablica zadań — zaplanuj lub zostaw na później
+          </p>
+        </div>
+        <Button onClick={onAddTask} className="w-full shrink-0 lg:w-auto">
+          <Plus className="size-4" />
+          Dodaj zadanie
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {!isMobile ? (
           <Button variant="outline" size="sm" onClick={onToggleBacklog}>
-            {backlogOpen ? "Ukryj backlog" : "Backlog"}
+            {backlogOpen ? "Ukryj tablicę" : "Tablica zadań"}
           </Button>
-        )}
+        ) : null}
         <Button variant="outline" size="sm" onClick={onThisWeek}>
           Ten tydzień
         </Button>
-        <Button variant="outline" size="icon" onClick={onPrevWeek}>
-          <ChevronLeft className="size-4" />
-        </Button>
-        <span className="min-w-[120px] text-center text-sm font-medium capitalize text-zinc-200">
-          {formatWeekRange(weekDays)}
-        </span>
-        <Button variant="outline" size="icon" onClick={onNextWeek}>
-          <ChevronRight className="size-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="icon" onClick={onPrevWeek}>
+            <ChevronLeft className="size-4" />
+          </Button>
+          <span className="min-w-[128px] px-1 text-center text-sm font-medium capitalize text-foreground">
+            {formatWeekRange(weekDays)}
+          </span>
+          <Button variant="outline" size="icon" onClick={onNextWeek}>
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
         <Button
           variant={hideCompleted ? "default" : "outline"}
           size="icon"
           onClick={onToggleHideCompleted}
           title="Ukryj wykonane"
+          aria-label="Ukryj wykonane"
         >
           <Filter className="size-4" />
         </Button>
       </div>
-    </div>
+    </header>
   );
 }

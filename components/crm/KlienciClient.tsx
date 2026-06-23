@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { LayoutGroup } from "framer-motion";
 import { Kanban, List, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
@@ -8,8 +9,9 @@ import { PipelineBoard } from "@/components/crm/PipelineBoard";
 import { LeadsListTable } from "@/components/crm/LeadsListTable";
 import { DealSheet } from "@/components/crm/DealSheet";
 import { useNewLead } from "@/components/dashboard/new-lead-provider";
-import type { Lead, LeadWithMeta } from "@/lib/crm/pipeline";
+import type { Lead, LeadWithMeta, PipelineStageId } from "@/lib/crm/pipeline";
 import type { CurrentUser } from "@/components/crm/PipelineCard";
+import { EYEBROW } from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
 
 type CrmView = "kanban" | "list";
@@ -24,6 +26,7 @@ export function KlienciClient({ leads: initialLeads, currentUser }: KlienciClien
   const [leads, setLeads] = useState(initialLeads);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [defaultStage, setDefaultStage] = useState<PipelineStageId | undefined>();
   const { registerOpenNewLead } = useNewLead();
 
   useEffect(() => {
@@ -32,8 +35,20 @@ export function KlienciClient({ leads: initialLeads, currentUser }: KlienciClien
 
   const openNewDeal = useCallback(() => {
     setSelectedLead(null);
+    setDefaultStage(undefined);
     setSheetOpen(true);
   }, []);
+
+  const openNewDealWithStage = useCallback((stage: PipelineStageId) => {
+    setSelectedLead(null);
+    setDefaultStage(stage);
+    setSheetOpen(true);
+  }, []);
+
+  function handleSheetOpenChange(open: boolean) {
+    setSheetOpen(open);
+    if (!open) setDefaultStage(undefined);
+  }
 
   useEffect(() => {
     registerOpenNewLead(openNewDeal);
@@ -68,8 +83,7 @@ export function KlienciClient({ leads: initialLeads, currentUser }: KlienciClien
       <header className="mb-6 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs text-muted-foreground">CRM & Delivery</p>
-            <h1 className="text-2xl font-semibold tracking-tight">Klienci</h1>
+            <p className={EYEBROW}>Pipeline sprzedaży</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Lejek sprzedażowy — aktywne procesy
             </p>
@@ -80,7 +94,7 @@ export function KlienciClient({ leads: initialLeads, currentUser }: KlienciClien
           </Button>
         </div>
 
-        <div className="flex items-center gap-1 border-b border-border/60">
+        <div className="flex items-center gap-1 border-b border-dna-border/40">
           <button
             type="button"
             onClick={() => setView("kanban")}
@@ -110,25 +124,30 @@ export function KlienciClient({ leads: initialLeads, currentUser }: KlienciClien
         </div>
       </header>
 
-      {view === "kanban" ? (
-        <PipelineBoard
-          leads={leads}
-          currentUser={currentUser}
-          onOpenLead={handleOpenLead}
-          onLeadUpdated={handleLeadUpdated}
-          onLeadArchived={handleLeadArchived}
-        />
-      ) : (
-        <LeadsListTable leads={leads} onOpenLead={handleOpenLead} />
-      )}
+      <LayoutGroup id="crm-deals">
+        {view === "kanban" ? (
+          <PipelineBoard
+            leads={leads}
+            currentUser={currentUser}
+            onOpenLead={handleOpenLead}
+            onLeadUpdated={handleLeadUpdated}
+            onLeadArchived={handleLeadArchived}
+            onAddLead={openNewDealWithStage}
+            selectedLeadId={sheetOpen ? selectedLead?.id : null}
+          />
+        ) : (
+          <LeadsListTable leads={leads} onOpenLead={handleOpenLead} />
+        )}
 
-      <DealSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        lead={selectedLead}
-        onUpdated={handleLeadUpdated}
-        onArchived={handleLeadArchived}
-      />
+        <DealSheet
+          open={sheetOpen}
+          onOpenChange={handleSheetOpenChange}
+          lead={selectedLead}
+          defaultStage={defaultStage}
+          onUpdated={handleLeadUpdated}
+          onArchived={handleLeadArchived}
+        />
+      </LayoutGroup>
     </DashboardPage>
   );
 }

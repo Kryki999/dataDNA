@@ -39,7 +39,7 @@ export function LeadsListTable({ leads, onOpenLead }: LeadsListTableProps) {
         header: "Firma",
         cell: ({ row }) => (
           <div>
-            <p className="font-medium">
+            <p className="font-medium text-foreground">
               {row.original.company ?? row.original.name}
             </p>
             {row.original.company ? (
@@ -145,7 +145,7 @@ export function LeadsListTable({ leads, onOpenLead }: LeadsListTableProps) {
       <table className="w-full text-sm">
         <thead>
           {table.getHeaderGroups().map((hg) => (
-            <tr key={hg.id} className="border-b border-zinc-800">
+            <tr key={hg.id} className="border-b border-dna-border/40">
               {hg.headers.map((header) => (
                 <th
                   key={header.id}
@@ -183,7 +183,7 @@ export function LeadsListTable({ leads, onOpenLead }: LeadsListTableProps) {
             table.getRowModel().rows.map((row) => (
               <tr
                 key={row.id}
-                className="cursor-pointer border-b border-zinc-800/60 transition-colors hover:bg-zinc-900/50"
+                className="cursor-pointer border-b border-dna-border/30 transition-colors hover:bg-dna-inset/50"
                 onClick={() => onOpenLead(row.original)}
               >
                 {row.getVisibleCells().map((cell) => (

@@ -16,6 +16,12 @@ import {
   type RevenueDealPoint,
   type RevenueTimeRange,
 } from "@/lib/revenue-chart";
+import {
+  EYEBROW,
+  FILTER_PILL_ACTIVE,
+  FILTER_PILL_INACTIVE,
+  FLAT_CONTAINER,
+} from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
 
 type RevenueAnalyticsChartProps = {
@@ -52,9 +58,7 @@ export function RevenueAnalyticsChart({ deals }: RevenueAnalyticsChartProps) {
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="text-xs uppercase tracking-widest text-zinc-500">
-          Revenue Trends
-        </p>
+        <p className={EYEBROW}>Trendy przychodów</p>
         <div className="flex flex-wrap gap-1.5">
           {(Object.keys(REVENUE_TIME_RANGE_LABELS) as RevenueTimeRange[]).map(
             (key) => (
@@ -64,10 +68,8 @@ export function RevenueAnalyticsChart({ deals }: RevenueAnalyticsChartProps) {
                 variant="ghost"
                 onClick={() => setRange(key)}
                 className={cn(
-                  "h-7 border px-2.5 text-[10px] font-semibold tracking-wider",
-                  range === key
-                    ? "border-zinc-600 bg-zinc-800 text-zinc-100"
-                    : "border-transparent text-zinc-500 hover:border-zinc-800 hover:bg-zinc-900 hover:text-zinc-300",
+                  "h-7 border px-2.5 text-[10px] font-semibold tracking-[0.08em]",
+                  range === key ? FILTER_PILL_ACTIVE : FILTER_PILL_INACTIVE,
                 )}
               >
                 {REVENUE_TIME_RANGE_LABELS[key]}
@@ -78,12 +80,17 @@ export function RevenueAnalyticsChart({ deals }: RevenueAnalyticsChartProps) {
       </div>
 
       {chartData.length === 0 || deals.length === 0 ? (
-        <div className="flex h-[260px] items-center justify-center border border-zinc-800 bg-zinc-950/50 text-sm text-zinc-500">
+        <div
+          className={cn(
+            FLAT_CONTAINER,
+            "flex h-[260px] items-center justify-center text-sm text-muted-foreground",
+          )}
+        >
           Brak danych — zamknij pierwszy deal w CRM.
         </div>
       ) : (
         <div
-          className="border border-zinc-800 bg-zinc-950/50 p-4"
+          className={cn(FLAT_CONTAINER, "p-4")}
           style={{ boxShadow: `inset 0 0 40px ${GLOW}` }}
         >
           <ChartContainer config={chartConfig} className="h-[260px] w-full">
@@ -102,12 +109,12 @@ export function RevenueAnalyticsChart({ deals }: RevenueAnalyticsChartProps) {
               <ChartTooltip
                 content={
                   <ChartTooltipContent
-                    className="border-zinc-800 bg-zinc-900 text-zinc-100"
+                    className="border-dna-border/40 bg-dna-surface text-foreground"
                     formatter={(value, _name, item) => (
                       <span className="font-mono tabular-nums">
                         {Number(value).toLocaleString("pl-PL")} PLN
                         {item.payload?.daily > 0 ? (
-                          <span className="ml-2 text-zinc-500">
+                          <span className="ml-2 text-muted-foreground">
                             (+{item.payload.daily.toLocaleString("pl-PL")})
                           </span>
                         ) : null}
@@ -126,7 +133,7 @@ export function RevenueAnalyticsChart({ deals }: RevenueAnalyticsChartProps) {
               />
             </LineChart>
           </ChartContainer>
-          <div className="mt-3 flex items-center justify-end gap-4 text-[10px] uppercase tracking-wider text-zinc-600">
+          <div className="mt-3 flex items-center justify-end gap-4 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span
                 className="inline-block size-2 rounded-full"

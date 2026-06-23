@@ -17,6 +17,14 @@ import {
   type ReachChannel,
   type ReachTimeRange,
 } from "@/lib/reach-chart";
+import {
+  DATA_HERO,
+  EYEBROW,
+  FILTER_PILL_ACTIVE,
+  FILTER_PILL_INACTIVE,
+  FLAT_CONTAINER,
+  SIGNAL_EDGE,
+} from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
 
 const CHANNEL_CHART_COLORS: Record<ReachChannel, string> = {
@@ -72,14 +80,12 @@ export function ReachAnalyticsChart({
   return (
     <section className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-zinc-500">
-            Zasięgi
-          </p>
-          <p className="mt-1 font-mono text-3xl font-semibold tabular-nums tracking-tight text-zinc-100">
+        <div className={cn("rounded-xl pl-4", SIGNAL_EDGE)}>
+          <p className={EYEBROW}>Zasięgi</p>
+          <p className={cn(DATA_HERO, "mt-1")}>
             {allTimeTotal.toLocaleString("pl-PL")}
-            <span className="ml-2 text-sm font-normal text-zinc-500">
-              all-time
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              łącznie
             </span>
           </p>
         </div>
@@ -95,9 +101,7 @@ export function ReachAnalyticsChart({
               onClick={() => setRange(key)}
               className={cn(
                 "h-7 border px-2.5 text-xs font-medium",
-                range === key
-                  ? "border-zinc-600 bg-zinc-800 text-zinc-100"
-                  : "border-transparent text-zinc-500 hover:border-zinc-800 hover:bg-zinc-900 hover:text-zinc-300",
+                range === key ? FILTER_PILL_ACTIVE : FILTER_PILL_INACTIVE,
               )}
             >
               {REACH_TIME_RANGE_LABELS[key]}
@@ -115,13 +119,14 @@ export function ReachAnalyticsChart({
             onClick={() => setChannel(key)}
             className={cn(
               "h-7 border px-2.5 text-xs font-medium",
-              channel === key
-                ? "border-zinc-600 bg-zinc-900 text-zinc-100"
-                : "border-transparent text-zinc-500 hover:border-zinc-800 hover:bg-zinc-900 hover:text-zinc-300",
+              channel === key ? FILTER_PILL_ACTIVE : FILTER_PILL_INACTIVE,
             )}
             style={
               channel === key
-                ? { borderColor: `${CHANNEL_CHART_COLORS[key]}55`, color: CHANNEL_CHART_COLORS[key] }
+                ? {
+                    borderColor: `${CHANNEL_CHART_COLORS[key]}55`,
+                    color: CHANNEL_CHART_COLORS[key],
+                  }
                 : undefined
             }
           >
@@ -131,12 +136,17 @@ export function ReachAnalyticsChart({
       </div>
 
       {chartData.length === 0 ? (
-        <div className="flex h-[260px] items-center justify-center border border-zinc-800 bg-zinc-950/50 text-sm text-zinc-500">
+        <div
+          className={cn(
+            FLAT_CONTAINER,
+            "flex h-[260px] items-center justify-center text-sm text-muted-foreground",
+          )}
+        >
           Brak danych — zaloguj pierwszą akcję.
         </div>
       ) : (
         <div
-          className="border border-zinc-800 bg-zinc-950/50 p-4"
+          className={cn(FLAT_CONTAINER, "p-4")}
           style={{ boxShadow: `inset 0 0 40px ${CHANNEL_GLOW[channel]}` }}
         >
           <ChartContainer config={chartConfig} className="h-[260px] w-full">
@@ -158,7 +168,7 @@ export function ReachAnalyticsChart({
               <ChartTooltip
                 content={
                   <ChartTooltipContent
-                    className="border-zinc-800 bg-zinc-900 text-zinc-100"
+                    className="border-dna-border/40 bg-dna-surface text-foreground"
                   />
                 }
               />
@@ -172,7 +182,7 @@ export function ReachAnalyticsChart({
               />
             </AreaChart>
           </ChartContainer>
-          <div className="mt-2 flex justify-between text-xs text-zinc-600">
+          <div className="mt-2 flex justify-between text-xs text-muted-foreground">
             <span>{chartData[0]?.label}</span>
             <span>Dziś</span>
           </div>

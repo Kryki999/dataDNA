@@ -11,8 +11,7 @@ import {
   schedulePlannerEvent,
   updatePlannerEvent,
 } from "@/lib/actions/calendar";
-import type { PlannerEventWithMeta, PlannerLeadOption } from "@/lib/planner/types";
-import { DEFAULT_EVENT_DURATION_MS } from "@/lib/planner/types";
+import type { PlannerEventWithMeta, PlannerIcon, PlannerLeadOption } from "@/lib/planner/types";
 import { addDefaultDuration } from "@/components/planner/planner-utils";
 
 type UsePlannerMutationsProps = {
@@ -125,7 +124,7 @@ export function usePlannerMutations({
   );
 
   const createBacklogEvent = useCallback(
-    (title: string) => {
+    (title: string, icon: PlannerIcon = "task") => {
       const tempId = `temp-${Date.now()}`;
       const optimistic: PlannerEventWithMeta = {
         id: tempId,
@@ -133,7 +132,7 @@ export function usePlannerMutations({
         leadId: null,
         title,
         description: "",
-        icon: "task",
+        icon,
         dueAt: null,
         endsAt: null,
         completedAt: null,
@@ -149,7 +148,7 @@ export function usePlannerMutations({
 
       startTransition(async () => {
         try {
-          const created = await createPlannerEvent({ title });
+          const created = await createPlannerEvent({ title, icon });
           setBacklog((c) =>
             c.map((e) =>
               e.id === tempId
@@ -171,6 +170,64 @@ export function usePlannerMutations({
       });
     },
     [setBacklog, startTransition],
+  );
+
+  const createScheduledEvent = useCallback(
+    (title: string, icon: PlannerIcon, dueAt: Date, endsAt?: Date) => {
+      const end = endsAt ?? addDefaultDuration(dueAt);
+      const tempId = `temp-${Date.now()}`;
+      const optimistic: PlannerEventWithMeta = {
+        id: tempId,
+        organizationId: "",
+        leadId: null,
+        title,
+        description: "",
+        icon,
+        dueAt,
+        endsAt: end,
+        completedAt: null,
+        status: "pending",
+        source: "manual",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        leadName: null,
+        leadCompany: null,
+        attachments: [],
+      };
+      setScheduled((c) => [...c, optimistic]);
+
+      startTransition(async () => {
+        try {
+          const created = await createPlannerEvent({
+            title,
+            icon,
+            dueAt,
+            endsAt: end,
+          });
+          setScheduled((c) =>
+            c.map((e) =>
+              e.id === tempId
+                ? {
+                    ...optimistic,
+                    ...created,
+                    id: created.id,
+                    dueAt: created.dueAt ? new Date(created.dueAt) : dueAt,
+                    endsAt: created.endsAt ? new Date(created.endsAt) : end,
+                    leadName: null,
+                    leadCompany: null,
+                    attachments: [],
+                  }
+                : e,
+            ),
+          );
+          toast.success("Zadanie dodane do kalendarza");
+        } catch {
+          setScheduled((c) => c.filter((e) => e.id !== tempId));
+          toast.error("Nie udało się dodać zadania");
+        }
+      });
+    },
+    [setScheduled, startTransition],
   );
 
   const patchEvent = useCallback(
@@ -251,6 +308,7 @@ export function usePlannerMutations({
     rescheduleEvent,
     moveEventToBacklog,
     createBacklogEvent,
+    createScheduledEvent,
     patchEvent,
     completeEvent,
     removeEvent,

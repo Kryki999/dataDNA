@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DealSheet } from "@/components/crm/DealSheet";
-import { FLAT_CONTAINER } from "@/lib/ui-patterns";
+import { EYEBROW, FLAT_CONTAINER } from "@/lib/ui-patterns";
 import { getLeadById } from "@/lib/actions/leads";
 import type { Lead } from "@/lib/crm/pipeline";
 import { cn } from "@/lib/utils";
@@ -101,17 +101,17 @@ export function RevenueDealsTable({ deals }: RevenueDealsTableProps) {
         header: "Klient",
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
-            <Avatar className="size-7 border border-zinc-800 bg-zinc-900">
-              <AvatarFallback className="bg-zinc-900 text-[10px] font-medium text-zinc-400">
+            <Avatar className="size-7 bg-dna-inset">
+              <AvatarFallback className="bg-dna-inset text-[10px] font-medium text-muted-foreground">
                 {getClientInitials(row.original)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium text-zinc-100">
+              <p className="font-medium text-foreground">
                 {getClientLabel(row.original)}
               </p>
               {row.original.company && row.original.leadName ? (
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-muted-foreground">
                   {row.original.leadName}
                 </p>
               ) : null}
@@ -124,11 +124,11 @@ export function RevenueDealsTable({ deals }: RevenueDealsTableProps) {
         header: "Typ projektu",
         cell: ({ row }) => {
           const type = getProjectType(row.original);
-          if (type === "—") return <span className="text-zinc-600">—</span>;
+          if (type === "—") return <span className="text-muted-foreground/60">—</span>;
           return (
             <Badge
               variant="outline"
-              className="border-zinc-700 bg-zinc-900/50 text-[11px] font-normal text-zinc-300"
+              className="border-dna-border/40 bg-dna-inset text-[11px] font-normal text-foreground"
             >
               {type}
             </Badge>
@@ -148,7 +148,7 @@ export function RevenueDealsTable({ deals }: RevenueDealsTableProps) {
         accessorKey: "closedAt",
         header: "Data wdrożenia",
         cell: ({ row }) => (
-          <span className="text-sm text-zinc-400">
+          <span className="text-sm text-muted-foreground">
             {format(row.original.closedAt, "d MMM yyyy", { locale: pl })}
           </span>
         ),
@@ -160,7 +160,7 @@ export function RevenueDealsTable({ deals }: RevenueDealsTableProps) {
           <Button
             size="icon"
             variant="ghost"
-            className="size-7 text-zinc-500 hover:text-zinc-200"
+            className="size-7 text-muted-foreground hover:text-foreground"
             disabled={!row.original.leadId || isPending}
             onClick={(e) => {
               e.stopPropagation();
@@ -189,10 +189,8 @@ export function RevenueDealsTable({ deals }: RevenueDealsTableProps) {
       <section className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-widest text-zinc-500">
-              Wygrane deale
-            </p>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className={EYEBROW}>Wygrane deale</p>
+            <p className="mt-1 text-sm text-muted-foreground">
               {deals.length}{" "}
               {deals.length === 1 ? "deal" : "deale"}
               {deals.length > 0 ? (
@@ -212,11 +210,11 @@ export function RevenueDealsTable({ deals }: RevenueDealsTableProps) {
           <table className="w-full text-sm">
             <thead>
               {table.getHeaderGroups().map((hg) => (
-                <tr key={hg.id} className="border-b border-zinc-800">
+                <tr key={hg.id} className="border-b border-dna-border">
                   {hg.headers.map((header) => (
                     <th
                       key={header.id}
-                      className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-zinc-500"
+                      className={cn("px-4 py-3 text-left", EYEBROW)}
                     >
                       {header.isPlaceholder
                         ? null
@@ -234,7 +232,7 @@ export function RevenueDealsTable({ deals }: RevenueDealsTableProps) {
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="px-4 py-12 text-center text-zinc-500"
+                    className="px-4 py-12 text-center text-muted-foreground"
                   >
                     Brak zamkniętych deali — oznacz klienta jako Wygrany w CRM.
                   </td>
@@ -244,9 +242,9 @@ export function RevenueDealsTable({ deals }: RevenueDealsTableProps) {
                   <tr
                     key={row.id}
                     className={cn(
-                      "border-b border-zinc-800/60 transition-colors",
+                      "border-b border-dna-border/60 transition-colors",
                       row.original.leadId
-                        ? "cursor-pointer hover:bg-zinc-900/50"
+                        ? "cursor-pointer hover:bg-dna-inset/60"
                         : "opacity-80",
                       isPending && "pointer-events-none opacity-60",
                     )}

@@ -22,9 +22,13 @@ import {
   type PipelineStageId,
 } from "@/lib/crm/pipeline";
 import type { CurrentUser } from "@/components/crm/PipelineCard";
-import { PipelineColumn } from "./PipelineColumn";
+import { PipelineColumn, PipelineColumnStatic } from "./PipelineColumn";
 import { PipelineCardOverlay } from "./PipelineCard";
-import { PipelineOutcomeZone } from "./PipelineOutcomeZone";
+import {
+  PipelineOutcomeZone,
+  PipelineOutcomeZoneStatic,
+} from "./PipelineOutcomeZone";
+import { useMounted } from "@/hooks/use-mounted";
 
 type PipelineBoardProps = {
   leads: LeadWithMeta[];
@@ -32,6 +36,8 @@ type PipelineBoardProps = {
   onOpenLead: (lead: Lead) => void;
   onLeadUpdated: (lead: Lead) => void;
   onLeadArchived: (leadId: string) => void;
+  onAddLead: (stage: PipelineStageId) => void;
+  selectedLeadId?: string | null;
 };
 
 export function PipelineBoard({
@@ -40,10 +46,13 @@ export function PipelineBoard({
   onOpenLead,
   onLeadUpdated,
   onLeadArchived,
+  onAddLead,
+  selectedLeadId,
 }: PipelineBoardProps) {
   const [leads, setLeads] = useState(initialLeads);
   const [activeLead, setActiveLead] = useState<LeadWithMeta | null>(null);
   const [, startTransition] = useTransition();
+  const mounted = useMounted();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -103,10 +112,10 @@ export function PipelineBoard({
       try {
         await updateLeadStage(leadId, nextStage);
         if (nextStage === "won") {
-          toast.success("Deal wygrany — dodano do Zysków i Archiwum");
+          toast.success("Projekt zrealizowany — dodano do archiwum");
           onLeadArchived(leadId);
         } else if (nextStage === "lost") {
-          toast.success("Deal przeniesiony do Archiwum");
+          toast.success("Współpraca zakończona — przeniesiono do archiwum");
           onLeadArchived(leadId);
         } else {
           toast.success("Etap zaktualizowany");
@@ -118,6 +127,49 @@ export function PipelineBoard({
     });
   }
 
+  const Column = mounted ? PipelineColumn : PipelineColumnStatic;
+  const OutcomeZone = mounted ? PipelineOutcomeZone : PipelineOutcomeZoneStatic;
+
+  const board = (
+    <>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {columns.map((column) => (
+          <Column
+            key={column.id}
+            id={column.id}
+            label={column.label}
+            accentColor={column.accent}
+            leads={column.leads}
+            currentUser={currentUser}
+            onOpenLead={onOpenLead}
+            onLeadUpdated={handleLeadUpdated}
+            onAddLead={onAddLead}
+            selectedLeadId={selectedLeadId}
+          />
+        ))}
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <OutcomeZone
+          id="lost"
+          label="Koniec współpracy"
+          description="Upuść tutaj — klient trafia do archiwum"
+          variant="lost"
+        />
+        <OutcomeZone
+          id="won"
+          label="Zrealizowano"
+          description="Upuść tutaj — projekt trafia do archiwum"
+          variant="won"
+        />
+      </div>
+    </>
+  );
+
+  if (!mounted) {
+    return board;
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -125,36 +177,7 @@ export function PipelineBoard({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {columns.map((column) => (
-          <PipelineColumn
-            key={column.id}
-            id={column.id}
-            label={column.label}
-            colorClass={column.color}
-            accentColor={column.accent}
-            leads={column.leads}
-            currentUser={currentUser}
-            onOpenLead={onOpenLead}
-            onLeadUpdated={handleLeadUpdated}
-          />
-        ))}
-      </div>
-
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <PipelineOutcomeZone
-          id="won"
-          label="Wygrany"
-          description="Upuść tutaj — deal trafia do Zysków i Archiwum"
-          variant="won"
-        />
-        <PipelineOutcomeZone
-          id="lost"
-          label="Przegrany"
-          description="Upuść tutaj — deal trafia do Archiwum"
-          variant="lost"
-        />
-      </div>
+      {board}
 
       <DragOverlay>
         {activeLead ? <PipelineCardOverlay lead={activeLead} /> : null}

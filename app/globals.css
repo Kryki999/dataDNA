@@ -46,9 +46,36 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-dna-inset: var(--dna-inset);
+  --color-dna-raised: var(--dna-raised);
+  --color-dna-canvas: var(--dna-canvas);
+  --color-dna-trough: var(--dna-trough);
+  --color-dna-surface: var(--dna-surface);
+  --color-dna-chrome: var(--dna-chrome);
+  --color-dna-chrome-top: var(--dna-chrome-top);
+  --color-dna-signal: var(--dna-signal);
+  --color-dna-border: var(--dna-border);
+  --color-dna-overlay: var(--dna-overlay);
+  /* Legacy aliases */
+  --color-zinc-850: var(--dna-canvas);
+  --color-zinc-875: var(--dna-chrome-top);
+  --color-shell-sidebar: var(--dna-chrome);
+  --color-shell-header: var(--dna-chrome-top);
+  --color-shell-canvas: var(--dna-canvas);
 }
 
 :root {
+  --dna-inset: oklch(0.97 0 0);
+  --dna-raised: oklch(1 0 0);
+  --dna-canvas: oklch(1 0 0);
+  --dna-trough: oklch(0.97 0 0);
+  --dna-surface: oklch(1 0 0);
+  --dna-chrome: oklch(0.985 0 0);
+  --dna-chrome-top: oklch(0.985 0 0);
+  --dna-signal: #0055ff;
+  --dna-signal-glow: 0 0 12px oklch(0.58 0.24 264 / 0.25);
+  --dna-border: oklch(0.922 0 0);
+  --dna-overlay: oklch(0 0 0 / 0.5);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -84,22 +111,37 @@
 }
 
 .dark {
-  --background: oklch(0.07 0.005 260);
+  /* Card lift V2.3 — canvas stays dark, cards lift clearly above */
+  --dna-canvas: oklch(0.09 0.012 260);
+  --dna-trough: oklch(0.14 0.012 260);
+  --dna-inset: oklch(0.2 0.013 260);
+  --dna-raised: oklch(0.31 0.015 260);
+  --dna-surface: oklch(0.24 0.014 260);
+  --dna-chrome: oklch(0.25 0.014 260);
+  --dna-chrome-top: oklch(0.265 0.014 260);
+  --dna-signal: #0055ff;
+  --dna-signal-glow: 0 0 12px oklch(0.58 0.24 264 / 0.25);
+  --dna-border: oklch(0.32 0.01 260);
+  --dna-elev-border: oklch(1 0 0 / 6%);
+  --dna-elev-shadow: 0 4px 24px rgba(0, 0, 0, 0.38), 0 0 0 1px var(--dna-elev-border);
+  --dna-overlay: oklch(0.04 0.01 260 / 0.8);
+
+  --background: var(--dna-canvas);
   --foreground: oklch(0.97 0.01 260);
-  --card: oklch(0.1 0.01 260);
+  --card: var(--dna-surface);
   --card-foreground: oklch(0.97 0.01 260);
-  --popover: oklch(0.1 0.01 260);
+  --popover: var(--dna-surface);
   --popover-foreground: oklch(0.97 0.01 260);
   --primary: oklch(0.58 0.24 264);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.14 0.015 260);
+  --secondary: var(--dna-trough);
   --secondary-foreground: oklch(0.97 0.01 260);
-  --muted: oklch(0.14 0.015 260);
+  --muted: var(--dna-trough);
   --muted-foreground: oklch(0.65 0.02 260);
   --accent: oklch(0.16 0.02 260);
   --accent-foreground: oklch(0.97 0.01 260);
   --destructive: oklch(0.65 0.22 25);
-  --border: oklch(0.28 0.01 260);
+  --border: var(--dna-border);
   --input: oklch(0.2 0.015 260);
   --ring: oklch(0.58 0.24 264);
   --chart-1: #0055ff;
@@ -107,7 +149,7 @@
   --chart-3: #3b7cff;
   --chart-4: #5a90ff;
   --chart-5: #7aa6ff;
-  --sidebar: oklch(0.1 0.02 260);
+  --sidebar: var(--dna-chrome);
   --sidebar-foreground: oklch(0.97 0.01 260);
   --sidebar-primary: oklch(0.58 0.24 264);
   --sidebar-primary-foreground: oklch(0.99 0 0);
@@ -126,5 +168,16 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

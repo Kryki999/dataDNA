@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { logReachMetrics } from "@/lib/actions/reach";
+import { EYEBROW, INPUT_SURFACE } from "@/lib/ui-patterns";
+import { cn } from "@/lib/utils";
 import type { ReachChannelConfig } from "@/lib/reach-channels";
 
 type ChannelReachFormProps = {
@@ -52,7 +54,7 @@ export function ChannelReachForm({ channel, onSuccess }: ChannelReachFormProps) 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor={`reach-${channel.id}`} className="text-xs uppercase tracking-wide text-zinc-500">
+        <Label htmlFor={`reach-${channel.id}`} className={EYEBROW}>
           {channel.inputLabel}
         </Label>
         <Input
@@ -63,7 +65,7 @@ export function ChannelReachForm({ channel, onSuccess }: ChannelReachFormProps) 
           value={value}
           onChange={(event) => setValue(event.target.value)}
           placeholder={channel.inputPlaceholder}
-          className="border-zinc-800 bg-zinc-900/80 font-mono text-zinc-100 placeholder:text-zinc-600"
+          className={cn(INPUT_SURFACE, "font-mono")}
         />
       </div>
       <Button

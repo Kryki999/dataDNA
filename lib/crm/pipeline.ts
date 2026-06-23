@@ -20,26 +20,22 @@ export const PIPELINE_COLUMNS = [
   {
     id: "new" as const,
     label: "Nowy",
-    color: "border-blue-500/30",
-    accent: "bg-blue-500",
+    accent: "bg-blue-500/70",
   },
   {
     id: "contact_made" as const,
     label: "Kontakt Nawiązany",
-    color: "border-sky-500/30",
-    accent: "bg-sky-500",
+    accent: "bg-sky-500/70",
   },
   {
     id: "demo_sent" as const,
     label: "Wysłane Demo",
-    color: "border-amber-500/30",
-    accent: "bg-amber-500",
+    accent: "bg-amber-500/70",
   },
   {
     id: "negotiation" as const,
     label: "Negocjacje",
-    color: "border-violet-500/30",
-    accent: "bg-violet-500",
+    accent: "bg-violet-500/70",
   },
 ] as const;
 

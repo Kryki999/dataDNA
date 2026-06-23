@@ -10,6 +10,7 @@ import {
   eventsForDay,
   GRID_HOURS,
 } from "@/components/planner/planner-utils";
+import { SURFACE_INSET } from "@/lib/ui-patterns";
 import { useSwipeDays } from "@/components/planner/hooks/useSwipeDays";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +53,7 @@ export function PlannerDayAgenda({
         <p className="text-xs text-zinc-500">Przesuń w lewo/prawo, aby zmienić dzień</p>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/50">
+      <div className={cn("overflow-hidden", SURFACE_INSET)}>
         <div className="relative" style={{ height: GRID_HOURS.length * HOUR_HEIGHT_PX }}>
           <div className="absolute left-0 top-0 w-10">
             {GRID_HOURS.map((hour) => (

@@ -17,6 +17,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SURFACE_CARD } from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
 import {
   createProjectTask,
@@ -53,7 +54,8 @@ function ProjectTaskCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group rounded-lg border border-border/60 bg-zinc-950/90 p-2.5 text-sm shadow-sm",
+        SURFACE_CARD,
+        "group rounded-lg p-2.5 text-sm",
         isDragging && "opacity-40",
       )}
     >

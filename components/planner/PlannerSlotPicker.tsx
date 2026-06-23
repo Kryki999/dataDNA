@@ -28,7 +28,7 @@ export function PlannerSlotPicker({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-md">
+      <DialogContent className="border-dna-border/40 bg-dna-surface sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
             Wybierz slot — {format(day, "d MMMM yyyy", { locale: pl })}
@@ -39,7 +39,7 @@ export function PlannerSlotPicker({
             <Button
               key={slot.id}
               variant="ghost"
-              className="w-full justify-start font-mono text-sm text-zinc-300 hover:bg-zinc-900"
+              className="w-full justify-start font-mono text-sm text-foreground hover:bg-dna-inset"
               onClick={() => {
                 onSelect(slot.date);
                 onOpenChange(false);

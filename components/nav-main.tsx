@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { SIGNAL_EDGE } from "@/lib/ui-patterns";
+import { cn } from "@/lib/utils";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -30,7 +32,7 @@ export function NavMain({
                 isActive={item.isActive}
                 className={
                   item.isActive
-                    ? "bg-zinc-900 text-foreground"
+                    ? cn("bg-dna-inset text-foreground", SIGNAL_EDGE)
                     : "text-muted-foreground"
                 }
                 render={<Link href={item.href} />}

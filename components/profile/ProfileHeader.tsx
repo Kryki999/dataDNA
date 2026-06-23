@@ -48,12 +48,12 @@ export function ProfileHeader({
       <div className="flex shrink-0 gap-2">
         <Button variant="outline" size="sm" onClick={onShare}>
           <Link2 className="size-4" />
-          Share
+          Udostępnij
         </Button>
         {!readOnly && onEdit ? (
           <Button variant="outline" size="sm" onClick={onEdit}>
             <Pencil className="size-4" />
-            Edit
+            Edytuj
           </Button>
         ) : null}
       </div>
