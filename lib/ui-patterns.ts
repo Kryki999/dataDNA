@@ -76,6 +76,9 @@ export const FILTER_PILL_INACTIVE =
 export const INPUT_SURFACE =
   "border-dna-border/40 bg-dna-inset text-foreground placeholder:text-muted-foreground";
 
+/** Scroll w modalach / kartach — natywny, styl DataDNA (patrz .dna-scrollbar w globals.css). */
+export const DNA_SCROLLBAR = "dna-scrollbar";
+
 /** Pole liczbowe bez strzałek góra/dół (wpisujesz wartość ręcznie). */
 export const INPUT_PLAIN_NUMERIC = cn(
   INPUT_SURFACE,

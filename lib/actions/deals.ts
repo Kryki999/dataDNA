@@ -5,7 +5,6 @@ import { revalidateDashboard } from "@/lib/revalidate";
 import { db } from "@/lib/db";
 import { activityLogs, deals } from "@/lib/db/schema";
 import { getCurrentOrganizationId } from "@/lib/tenant";
-import { REVENUE_GOAL_PLN } from "@/lib/constants";
 
 export type DealInput = {
   amountPln: number;
@@ -42,7 +41,7 @@ export async function closeDeal(input: DealInput) {
   return deal;
 }
 
-export async function getRevenueProgress() {
+export async function getTotalRevenue() {
   const organizationId = await getCurrentOrganizationId();
 
   const [result] = await db
@@ -53,10 +52,8 @@ export async function getRevenueProgress() {
     .where(eq(deals.organizationId, organizationId));
 
   const total = Number(result?.total ?? 0);
-  const goal = REVENUE_GOAL_PLN;
-  const percent = goal > 0 ? Math.min(100, Math.round((total / goal) * 100)) : 0;
 
-  return { total, goal, percent };
+  return { total };
 }
 
 export async function getRecentDeals(limit = 5) {

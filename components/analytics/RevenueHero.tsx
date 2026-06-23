@@ -1,19 +1,16 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { REVENUE_GOAL_PLN } from "@/lib/constants";
 import { DATA_HERO, EYEBROW, SIGNAL_EDGE } from "@/lib/ui-patterns";
 
 type RevenueHeroProps = {
   total: number;
-  goal: number;
   percentChange: number;
   thisMonth: number;
 };
 
 export function RevenueHero({
   total,
-  goal,
   percentChange,
   thisMonth,
 }: RevenueHeroProps) {
@@ -43,27 +40,18 @@ export function RevenueHero({
           </span>
         ) : null}
       </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <p className="text-muted-foreground">
-          Ten miesiąc:{" "}
-          <span
-            className={cn(
-              "font-medium tabular-nums",
-              thisMonth > 0 ? "text-emerald-400" : "text-foreground",
-            )}
-          >
-            {thisMonth > 0 ? "+" : ""}
-            {thisMonth.toLocaleString("pl-PL")} PLN
-          </span>
-        </p>
-        <p className="text-muted-foreground/50">·</p>
-        <p className="text-muted-foreground">
-          Cel: {goal.toLocaleString("pl-PL")} PLN
-          {goal === REVENUE_GOAL_PLN ? null : (
-            <span className="ml-1 text-muted-foreground/60">(env)</span>
+      <p className="text-sm text-muted-foreground">
+        Ten miesiąc:{" "}
+        <span
+          className={cn(
+            "font-medium tabular-nums",
+            thisMonth > 0 ? "text-emerald-400" : "text-foreground",
           )}
-        </p>
-      </div>
+        >
+          {thisMonth > 0 ? "+" : ""}
+          {thisMonth.toLocaleString("pl-PL")} PLN
+        </span>
+      </p>
     </section>
   );
 }

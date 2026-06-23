@@ -92,10 +92,6 @@ export function ProfileReachChart({ data, totalReach }: ProfileReachChartProps) 
             />
           </AreaChart>
         </ChartContainer>
-        <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-          <span>{chartData[0]?.label ?? ""}</span>
-          <span>Dziś</span>
-        </div>
       </div>
     </section>
   );

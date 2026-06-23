@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { SURFACE_OVERLAY } from "@/lib/ui-patterns";
+import { DNA_SCROLLBAR, SURFACE_OVERLAY } from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
 
 type MotionDetailOverlayProps = {
@@ -55,6 +55,7 @@ export function MotionDetailOverlay({
             layoutId={layoutId}
             className={cn(
               "fixed inset-x-4 top-[8%] z-50 mx-auto max-h-[min(85vh,720px)] w-full max-w-lg overflow-x-hidden overflow-y-auto rounded-xl bg-dna-surface shadow-2xl",
+              DNA_SCROLLBAR,
               className,
             )}
             transition={

@@ -1,14 +1,14 @@
 import {
   getDealsTimeSeries,
   getRevenueGrowth,
-  getRevenueProgress,
+  getTotalRevenue,
 } from "@/lib/actions/deals";
 import { getWonDealsWithLeads } from "@/lib/actions/leads";
 import { ZyskiClient } from "@/components/analytics/ZyskiClient";
 
 export default async function ZyskiPage() {
   const [revenue, growth, chartDeals, deals] = await Promise.all([
-    getRevenueProgress(),
+    getTotalRevenue(),
     getRevenueGrowth(),
     getDealsTimeSeries(),
     getWonDealsWithLeads(),

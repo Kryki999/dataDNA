@@ -11,7 +11,7 @@ Open-source sales cockpit for founders, freelancers and indie hackers. Track out
 | **Profil** | Avatar, bio, streaks, heatmap, activity log, public `/p/username` |
 | **Klienci** | Kanban CRM with drag & drop |
 | **Zasięgi** | Reach charts (calls, X, Meta Ads) |
-| **Zyski** | Revenue goal from won deals |
+| **Zyski** | Revenue from won deals |
 | **Kalendarz** | Follow-ups synced from CRM |
 | **Archiwum** | Searchable table with filters and reactivation |
 
@@ -73,7 +73,6 @@ https://your-app.vercel.app/p/your-handle
 | `CEO_USERNAME` | seed | Public profile handle |
 | `CEO_DISPLAY_NAME` | seed | Display name on profile |
 | `WEBHOOK_ORG_ID` | webhooks | UUID from `db:seed` output |
-| `REVENUE_GOAL_PLN` | optional | Default `20000` |
 | `BLOB_READ_WRITE_TOKEN` | avatars | Auto from Vercel Blob store (see below) |
 
 ### Avatar uploads (Vercel Blob)

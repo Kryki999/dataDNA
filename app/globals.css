@@ -76,6 +76,8 @@
   --dna-signal-glow: 0 0 12px oklch(0.58 0.24 264 / 0.25);
   --dna-border: oklch(0.922 0 0);
   --dna-overlay: oklch(0 0 0 / 0.5);
+  --dna-scrollbar-thumb: oklch(0.78 0 0);
+  --dna-scrollbar-thumb-hover: oklch(0.62 0.08 264);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -125,6 +127,8 @@
   --dna-elev-border: oklch(1 0 0 / 6%);
   --dna-elev-shadow: 0 4px 24px rgba(0, 0, 0, 0.38), 0 0 0 1px var(--dna-elev-border);
   --dna-overlay: oklch(0.04 0.01 260 / 0.8);
+  --dna-scrollbar-thumb: oklch(0.38 0.012 260);
+  --dna-scrollbar-thumb-hover: oklch(0.48 0.04 264);
 
   --background: var(--dna-canvas);
   --foreground: oklch(0.97 0.01 260);
@@ -179,5 +183,37 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Natywny scroll — tylko styl, zero JS, pełna niezawodność */
+@layer utilities {
+  .dna-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--dna-scrollbar-thumb) transparent;
+  }
+
+  .dna-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .dna-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .dna-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: var(--dna-scrollbar-thumb);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .dna-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--dna-scrollbar-thumb-hover);
+  }
+
+  .dna-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
   }
 }

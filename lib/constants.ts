@@ -26,8 +26,6 @@ export const PREDEFINED_LEAD_TAGS = [
 
 export const TEMPERATURE_ORDER = { hot: 0, warm: 1, cold: 2 } as const;
 
-export const REVENUE_GOAL_PLN = Number(process.env.REVENUE_GOAL_PLN ?? 20000);
-
 export function getIntensityLevel(count: number): number {
   if (count <= 0) return 0;
   if (count === 1) return 1;

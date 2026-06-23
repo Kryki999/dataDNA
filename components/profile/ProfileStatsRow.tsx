@@ -21,11 +21,11 @@ export function ProfileStatsRow({
 }: ProfileStatsRowProps) {
   const stats = [
     { label: "Łączne zasięgi", value: formatReach(totalReach) },
-    { label: "Cold calls", value: coldCalls.toString() },
-    { label: "Longest Streak", value: `${longestStreak}d` },
+    { label: "Zimne telefony", value: coldCalls.toString() },
+    { label: "Najdłuższa seria", value: `${longestStreak} dni` },
     {
-      label: "Current Streak",
-      value: `${currentStreak}d`,
+      label: "Aktualna seria",
+      value: `${currentStreak} dni`,
       highlight: true,
     },
   ];

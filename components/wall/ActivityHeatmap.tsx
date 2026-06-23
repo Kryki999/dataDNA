@@ -1,5 +1,7 @@
 "use client";
 
+import { format } from "date-fns";
+import { pl } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -18,8 +20,6 @@ const INTENSITY_CLASSES = [
   "bg-[#1E69FF]",
   "bg-[#3B7CFF]",
 ];
-
-const MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
 type ActivityHeatmapProps = {
   days: Record<string, number>;
@@ -55,17 +55,24 @@ export function ActivityHeatmap({
 
   const visibleWeeks = compact ? weeks.slice(-20) : weeks;
 
-  const monthMarkers: Array<{ index: number; label: string }> = [];
-  let lastMonth = -1;
+  type MonthSpan = { key: string; label: string; start: number; end: number };
+  const monthSpans: MonthSpan[] = [];
+
   visibleWeeks.forEach((week, weekIndex) => {
-    const firstDate = week.find((d) => d);
-    if (firstDate) {
-      const month = new Date(`${firstDate}T12:00:00`).getMonth();
-      if (month !== lastMonth) {
-        monthMarkers.push({ index: weekIndex, label: MONTH_LABELS[month]! });
-        lastMonth = month;
-      }
+    const firstDate = week.find(Boolean);
+    if (!firstDate) return;
+
+    const date = new Date(`${firstDate}T12:00:00`);
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    const label = format(date, "LLL", { locale: pl });
+    const last = monthSpans[monthSpans.length - 1];
+
+    if (last?.key === key) {
+      last.end = weekIndex;
+      return;
     }
+
+    monthSpans.push({ key, label, start: weekIndex, end: weekIndex });
   });
 
   return (
@@ -77,32 +84,27 @@ export function ActivityHeatmap({
       <div className="w-full overflow-hidden">
         <div className="flex w-full gap-1">
           <div className="flex shrink-0 flex-col justify-around pt-5 text-[10px] leading-none text-muted-foreground">
-            <span>M</span>
-            <span className="opacity-0">T</span>
-            <span>W</span>
-            <span className="opacity-0">T</span>
-            <span>F</span>
-            <span className="opacity-0">S</span>
-            <span className="opacity-0">S</span>
+            <span className="opacity-0">n</span>
+            <span>pn</span>
+            <span className="opacity-0">w</span>
+            <span>śr</span>
+            <span className="opacity-0">c</span>
+            <span>pt</span>
+            <span className="opacity-0">s</span>
           </div>
           <div className="min-w-0 flex-1">
-            <div
-              className="mb-1 grid h-4 gap-[2px]"
-              style={{
-                gridTemplateColumns: `repeat(${visibleWeeks.length}, minmax(0, 1fr))`,
-              }}
-            >
-              {visibleWeeks.map((_, weekIndex) => {
-                const marker = monthMarkers.find((m) => m.index === weekIndex);
-                return (
-                  <div
-                    key={`month-${weekIndex}`}
-                    className="flex items-start justify-center text-[10px] text-muted-foreground"
-                  >
-                    {marker?.label ?? ""}
-                  </div>
-                );
-              })}
+            <div className="relative mb-1 h-4 w-full">
+              {monthSpans.map((span) => (
+                <span
+                  key={`${span.key}-${span.start}`}
+                  className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[10px] text-muted-foreground"
+                  style={{
+                    left: `${((span.start + span.end + 1) / 2 / visibleWeeks.length) * 100}%`,
+                  }}
+                >
+                  {span.label}
+                </span>
+              ))}
             </div>
             <div
               className="grid gap-[2px]"
