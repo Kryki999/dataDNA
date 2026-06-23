@@ -1,13 +1,15 @@
-import { subMonths, addMonths } from "date-fns";
-import { getCalendarEvents } from "@/lib/actions/calendar";
-import { CalendarView } from "@/components/calendar/CalendarView";
+import { endOfWeek, startOfWeek, subWeeks, addWeeks } from "date-fns";
+import { getPlannerData } from "@/lib/actions/calendar";
+import { PlannerView } from "@/components/planner/PlannerView";
 
 export default async function KalendarzPage() {
   const now = new Date();
-  const from = subMonths(now, 2);
-  const to = addMonths(now, 2);
+  const from = subWeeks(startOfWeek(now, { weekStartsOn: 1 }), 1);
+  const to = addWeeks(endOfWeek(now, { weekStartsOn: 1 }), 2);
 
-  const events = await getCalendarEvents(from, to);
+  const { scheduled, backlog, leads } = await getPlannerData(from, to);
 
-  return <CalendarView events={events} />;
+  return (
+    <PlannerView scheduled={scheduled} backlog={backlog} leads={leads} />
+  );
 }

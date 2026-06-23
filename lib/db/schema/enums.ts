@@ -60,3 +60,10 @@ export const projectTaskStageEnum = pgEnum("project_task_stage", [
   "review",
   "done",
 ]);
+export const plannerEventIconEnum = pgEnum("planner_event_icon", [
+  "task",
+  "phone",
+  "follow_up",
+  "design",
+  "meeting",
+]);

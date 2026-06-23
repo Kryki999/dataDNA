@@ -6,6 +6,7 @@ export * from "./deals";
 export * from "./integrations";
 export * from "./webhooks";
 export * from "./calendar";
+export * from "./calendar-attachments";
 export * from "./project-tasks";
 
 import { organizations, users } from "./organizations";
@@ -15,6 +16,7 @@ import { deals } from "./deals";
 import { integrations } from "./integrations";
 import { webhookEvents } from "./webhooks";
 import { calendarEvents } from "./calendar";
+import { calendarEventAttachments } from "./calendar-attachments";
 import { projectTasks } from "./project-tasks";
 
 export const schema = {
@@ -28,5 +30,6 @@ export const schema = {
   integrations,
   webhookEvents,
   calendarEvents,
+  calendarEventAttachments,
   projectTasks,
 };

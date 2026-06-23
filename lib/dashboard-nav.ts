@@ -12,7 +12,7 @@ export const DASHBOARD_NAV = [
   { id: "klienci", href: "/klienci", title: "Klienci", icon: Kanban },
   { id: "zasiegi", href: "/zasiegi", title: "Zasięgi", icon: BarChart3 },
   { id: "zyski", href: "/zyski", title: "Zyski", icon: Target },
-  { id: "kalendarz", href: "/kalendarz", title: "Kalendarz", icon: Calendar },
+  { id: "kalendarz", href: "/kalendarz", title: "Planner", icon: Calendar },
   { id: "archiwum", href: "/archiwum", title: "Archiwum", icon: Archive },
 ] as const;
 
