@@ -2,8 +2,9 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import type { ReactNode } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getCardColorClasses } from "@/lib/design-tokens";
+import { getCardColorClasses, type CardColorKey } from "@/lib/design-tokens";
 import { getTagColorClass } from "@/lib/crm/tags";
 import { CARD_TITLE, SURFACE_CARD, SIGNAL_EDGE_HOVER } from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
@@ -13,31 +14,39 @@ export type EntityCardAvatar = {
   initials: string;
 };
 
+export type EntityCardVariant = "tile" | "task";
+
 export type EntityCardProps = {
   layoutId?: string;
+  variant?: EntityCardVariant;
   title: string;
   coverUrl?: string | null;
   cardColor?: string | null;
   tags?: string[];
   avatars?: EntityCardAvatar[];
   subtitle?: string | null;
+  meta?: string | null;
+  leading?: ReactNode;
   selected?: boolean;
-  compact?: boolean;
+  completed?: boolean;
   onClick?: () => void;
   className?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
 };
 
 export function EntityCard({
   layoutId,
+  variant = "tile",
   title,
   coverUrl,
   cardColor,
   tags = [],
   avatars = [],
   subtitle,
+  meta,
+  leading,
   selected = false,
-  compact = false,
+  completed = false,
   onClick,
   className,
   children,
@@ -49,57 +58,121 @@ export function EntityCard({
       <div
         className={cn(
           "invisible rounded-xl",
-          compact ? "h-24" : "min-h-[120px]",
+          variant === "task" ? "h-[72px]" : "min-h-[140px]",
         )}
         aria-hidden
       />
     );
   }
 
-  const inner = (
+  const interactive = Boolean(onClick);
+
+  const taskCard = (
+    <div
+      className={cn(
+        "group relative flex min-h-[72px] overflow-hidden rounded-xl text-left transition-all",
+        SURFACE_CARD,
+        colors.border,
+        colors.accentBorder,
+        "border-l-[5px]",
+        interactive && "cursor-pointer hover:brightness-110",
+        completed && "opacity-55",
+        className,
+      )}
+      onClick={onClick}
+      onKeyDown={
+        interactive
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+    >
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-3 py-2.5">
+        <div className="flex items-center gap-2">
+          {leading}
+          {meta ? (
+            <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+              {meta}
+            </span>
+          ) : null}
+        </div>
+        <p
+          className={cn(
+            CARD_TITLE,
+            "line-clamp-2 leading-snug",
+            completed && "line-through text-muted-foreground",
+          )}
+        >
+          {title}
+        </p>
+        {subtitle ? (
+          <p className="truncate text-[10px] font-medium text-primary/90">
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
+      {children}
+    </div>
+  );
+
+  const tileCard = (
     <div
       className={cn(
         "group relative flex flex-col overflow-hidden rounded-xl text-left transition-all",
         SURFACE_CARD,
         SIGNAL_EDGE_HOVER,
         colors.border,
-        onClick && "cursor-pointer hover:brightness-105",
+        colors.accentBorder,
+        "border-l-[5px]",
+        interactive && "cursor-pointer hover:brightness-110",
         className,
       )}
       onClick={onClick}
       onKeyDown={
-        onClick
+        interactive
           ? (e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                onClick();
+                onClick?.();
               }
             }
           : undefined
       }
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
     >
-      {!compact ? (
-        <div
-          className={cn(
-            "relative aspect-[16/9] w-full bg-gradient-to-br",
-            colors.bg,
-          )}
-        >
-          {coverUrl ? (
-            <Image
-              src={coverUrl}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 320px"
-            />
-          ) : null}
-        </div>
-      ) : null}
+      <div
+        className={cn(
+          "relative aspect-[16/9] w-full bg-gradient-to-br",
+          colors.bg,
+        )}
+      >
+        {coverUrl ? (
+          <Image
+            src={coverUrl}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 320px"
+          />
+        ) : (
+          <div
+            className={cn(
+              "absolute inset-0 bg-gradient-to-br opacity-90",
+              colors.bg,
+            )}
+            aria-hidden
+          />
+        )}
+      </div>
 
-      <div className={cn("flex flex-1 flex-col p-3", compact && "gap-1")}>
+      <div className="flex flex-1 flex-col p-3">
         {tags.length > 0 ? (
           <div className="mb-2 flex flex-wrap gap-1">
             {tags.slice(0, 2).map((tag) => (
@@ -144,6 +217,8 @@ export function EntityCard({
       {children}
     </div>
   );
+
+  const inner = variant === "task" ? taskCard : tileCard;
 
   if (layoutId) {
     return (

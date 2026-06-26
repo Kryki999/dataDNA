@@ -26,6 +26,7 @@ type PlannerDayAgendaProps = {
   onPrevDay: () => void;
   onNextDay: () => void;
   onScheduleBacklog: (eventId: string) => void;
+  interactive?: boolean;
 };
 
 export function PlannerDayAgenda({
@@ -40,6 +41,7 @@ export function PlannerDayAgenda({
   onPrevDay,
   onNextDay,
   onScheduleBacklog,
+  interactive = true,
 }: PlannerDayAgendaProps) {
   const swipe = useSwipeDays({ onPrev: onPrevDay, onNext: onNextDay });
   const dayEvents = eventsForDay(events, day, hideCompleted);
@@ -79,6 +81,7 @@ export function PlannerDayAgenda({
                 key={event.id}
                 event={event}
                 layoutId
+                interactive={interactive}
                 isSelected={selectedId === event.id}
                 isDragging={draggingId === event.id}
                 onClick={() => onSelect(event.id)}
@@ -97,6 +100,7 @@ export function PlannerDayAgenda({
               key={event.id}
               event={event}
               isMobile
+              interactive={interactive}
               onSchedule={() => onScheduleBacklog(event.id)}
             />
           ))}

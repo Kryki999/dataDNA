@@ -4,6 +4,7 @@ import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { clients, notes, pipelineDeals, revenueRecords } from "@/lib/db/schema";
 import { getClientDisplayName } from "@/lib/crm/client-name";
+import { CLIENT_CARD_COLORS } from "@/lib/crm/clients";
 import {
   createClient,
   getClientById,
@@ -258,7 +259,15 @@ export async function silentCreatePipelineDeal(
       return { ok: false, reason: "pick_required", matches: resolution.matches };
     }
 
-    const client = await createClient({ name, company: name });
+    const defaultColor =
+      CLIENT_CARD_COLORS[
+        Math.floor(Math.random() * CLIENT_CARD_COLORS.length)
+      ]!;
+    const client = await createClient({
+      name,
+      company: name,
+      cardColor: defaultColor,
+    });
     clientId = client.id;
   } else {
     const client = await getClientById(clientId);

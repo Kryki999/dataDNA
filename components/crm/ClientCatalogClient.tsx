@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { LayoutGroup } from "framer-motion";
 import { Search } from "lucide-react";
+import { ClientCardColorControl } from "@/components/cards/ClientCardColorControl";
 import { EntityCard } from "@/components/cards/EntityCard";
 import { ClientProfileDetail } from "@/components/crm/ClientProfileDetail";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
@@ -35,13 +36,20 @@ export function ClientCatalogClient({ clients: initial }: ClientCatalogClientPro
       .map((r) => r.client);
   }, [clients, query]);
 
+  function syncClient(updated: Client) {
+    setClients((cur) =>
+      cur.map((item) => (item.id === updated.id ? updated : item)),
+    );
+    if (selected?.id === updated.id) setSelected(updated);
+  }
+
   return (
     <DashboardPage wide>
       <header className="mb-8 space-y-4">
         <div>
           <p className={EYEBROW}>Baza klientów</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Wszystkie profile — stała kartoteka relacji
+            Kolor karty ustawisz kropką na karcie lub w profilu klienta
           </p>
         </div>
         <div className="relative max-w-xl">
@@ -59,18 +67,32 @@ export function ClientCatalogClient({ clients: initial }: ClientCatalogClientPro
         {filtered.map((client) => {
           const title = client.company?.trim() || client.name;
           return (
-            <EntityCard
-              key={client.id}
-              layoutId={`client-${client.id}`}
-              title={title}
-              coverUrl={client.coverUrl}
-              cardColor={client.cardColor}
-              tags={client.tags}
-              onClick={() => {
-                setSelected(client);
-                setOpen(true);
-              }}
-            />
+            <div key={client.id} className="group relative">
+              <EntityCard
+                layoutId={`client-${client.id}`}
+                title={title}
+                coverUrl={client.coverUrl}
+                cardColor={client.cardColor}
+                tags={client.tags}
+                onClick={() => {
+                  setSelected(client);
+                  setOpen(true);
+                }}
+              />
+              <div
+                className="absolute bottom-2.5 right-2.5 z-10 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ClientCardColorControl
+                  clientId={client.id}
+                  value={client.cardColor}
+                  onUpdated={syncClient}
+                  size="sm"
+                  align="end"
+                  className="bg-dna-surface/80 shadow-sm backdrop-blur-sm"
+                />
+              </div>
+            </div>
           );
         })}
       </div>
@@ -86,6 +108,7 @@ export function ClientCatalogClient({ clients: initial }: ClientCatalogClientPro
           open={open}
           onClose={() => setOpen(false)}
           layoutId={selected ? `client-${selected.id}` : undefined}
+          embeddedLayout
           panelClassName="!flex !max-h-[min(88vh,760px)] !flex-col !overflow-hidden p-0"
         >
           {selected && open ? (

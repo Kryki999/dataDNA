@@ -7,9 +7,9 @@ export default async function KalendarzPage() {
   const from = subWeeks(startOfWeek(now, { weekStartsOn: 1 }), 1);
   const to = addWeeks(endOfWeek(now, { weekStartsOn: 1 }), 2);
 
-  const { scheduled, backlog, leads } = await getPlannerData(from, to);
+  const { scheduled, backlog, clients } = await getPlannerData(from, to);
 
   return (
-    <PlannerView scheduled={scheduled} backlog={backlog} leads={leads} />
+    <PlannerView scheduled={scheduled} backlog={backlog} clients={clients} />
   );
 }

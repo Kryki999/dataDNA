@@ -12,12 +12,13 @@ import {
 import type {
   PlannerEventWithMeta,
   PlannerIcon,
-  PlannerLeadOption,
+  PlannerClientOption,
 } from "@/lib/planner/types";
 import { PLANNER_ICONS } from "@/lib/planner/types";
 import { renderSimpleMarkdown } from "@/lib/planner/markdown";
+import { ClientCardColorControl } from "@/components/cards/ClientCardColorControl";
 import { PlannerIconBadge } from "@/components/planner/PlannerIconBadge";
-import { leadLabel } from "@/components/planner/planner-utils";
+import { clientLabel } from "@/components/planner/planner-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,7 +34,7 @@ import { cn } from "@/lib/utils";
 
 type PlannerEventDetailProps = {
   event: PlannerEventWithMeta;
-  leads: PlannerLeadOption[];
+  clients: PlannerClientOption[];
   onPatch: (
     id: string,
     patch: Parameters<
@@ -44,6 +45,7 @@ type PlannerEventDetailProps = {
   onDelete: (id: string) => void;
   onClose: () => void;
   onAttachmentsChange: (id: string, attachments: PlannerEventWithMeta["attachments"]) => void;
+  onClientColorUpdated?: (eventId: string, cardColor: string | null) => void;
 };
 
 const ICON_LABELS: Record<PlannerIcon, string> = {
@@ -56,17 +58,18 @@ const ICON_LABELS: Record<PlannerIcon, string> = {
 
 export function PlannerEventDetail({
   event,
-  leads,
+  clients,
   onPatch,
   onComplete,
   onDelete,
   onClose,
   onAttachmentsChange,
+  onClientColorUpdated,
 }: PlannerEventDetailProps) {
   const [title, setTitle] = useState(event.title);
   const [description, setDescription] = useState(event.description);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [showCrmLink, setShowCrmLink] = useState(Boolean(event.leadId));
+  const [showCrmLink, setShowCrmLink] = useState(Boolean(event.clientId));
   const [showPreview, setShowPreview] = useState(false);
   const [editingTime, setEditingTime] = useState(false);
   const [, startUpload] = useTransition();
@@ -76,10 +79,10 @@ export function PlannerEventDetail({
   useEffect(() => {
     setTitle(event.title);
     setDescription(event.description);
-    setShowCrmLink(Boolean(event.leadId));
+    setShowCrmLink(Boolean(event.clientId));
     setEditingTime(false);
     setShowPreview(false);
-  }, [event.id, event.title, event.description, event.leadId]);
+  }, [event.id, event.title, event.description, event.clientId]);
 
   const debouncedPatch = useCallback(
     (patch: Parameters<typeof onPatch>[1]) => {
@@ -157,9 +160,21 @@ export function PlannerEventDetail({
           <p className={EYEBROW}>
             {event.dueAt ? "Zaplanowane" : "Backlog"}
           </p>
-          <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={onClose}>
-            <X className="size-4" />
-          </Button>
+          <div className="flex shrink-0 items-center gap-0.5">
+            {event.clientId ? (
+              <ClientCardColorControl
+                clientId={event.clientId}
+                value={event.clientCardColor}
+                onUpdated={(client) => {
+                  onClientColorUpdated?.(event.id, client.cardColor);
+                }}
+                size="sm"
+              />
+            ) : null}
+            <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={onClose}>
+              <X className="size-4" />
+            </Button>
+          </div>
         </div>
 
         <Input
@@ -242,10 +257,10 @@ export function PlannerEventDetail({
             </Button>
           ) : (
             <Select
-              value={event.leadId ?? "none"}
+              value={event.clientId ?? "none"}
               onValueChange={(value) =>
                 onPatch(event.id, {
-                  leadId: value === "none" ? null : value,
+                  clientId: value === "none" ? null : value,
                 })
               }
             >
@@ -254,16 +269,21 @@ export function PlannerEventDetail({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Brak powiązania</SelectItem>
-                {leads.map((lead) => (
-                  <SelectItem key={lead.id} value={lead.id}>
-                    {lead.company ?? lead.name}
+                {clients.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.company ?? client.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           )}
-          {leadLabel(event) ? (
-            <p className="text-xs text-primary/90">{leadLabel(event)}</p>
+          {clientLabel(event) ? (
+            <p className="text-xs text-primary/90">{clientLabel(event)}</p>
+          ) : null}
+          {!event.clientId && showCrmLink ? (
+            <p className="text-xs text-muted-foreground">
+              Powiąż zadanie z klientem, aby ustawić kolor karty.
+            </p>
           ) : null}
         </div>
       </div>

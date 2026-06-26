@@ -16,18 +16,43 @@ type PlannerBacklogBoardProps = {
   onQuickAddClick: () => void;
   onSelect?: (id: string) => void;
   selectedId?: string | null;
+  interactive?: boolean;
   className?: string;
 };
+
+function PlannerBacklogBoardDroppable({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const { isOver, setNodeRef } = useDroppable({ id: BACKLOG_DROP_ID });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        FLAT_CONTAINER,
+        "min-h-[200px] overflow-visible p-4 transition-colors",
+        isOver && "ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
 
 export function PlannerBacklogBoard({
   events,
   onQuickAddClick,
   onSelect,
   selectedId,
+  interactive = true,
   className,
 }: PlannerBacklogBoardProps) {
   const [query, setQuery] = useState("");
-  const { isOver, setNodeRef } = useDroppable({ id: BACKLOG_DROP_ID });
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -38,6 +63,57 @@ export function PlannerBacklogBoard({
         e.description.toLowerCase().includes(q),
     );
   }, [events, query]);
+
+  const boardBody = (
+    <>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Szukaj na tablicy…"
+            className={cn(INPUT_SURFACE, "pl-9")}
+          />
+        </div>
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {filtered.length}{" "}
+          {filtered.length === 1 ? "karteczka" : "karteczek"}
+        </span>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="flex min-h-[120px] flex-col items-center justify-center rounded-lg border border-dashed border-dna-border/40 px-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            Tablica pusta — dodaj karteczkę lub upuść tu zadanie z kalendarza
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-4 overflow-visible px-1 pb-1 pt-3">
+          {filtered.map((event, index) => (
+            <PlannerBacklogCard
+              key={event.id}
+              event={event}
+              variant="sticky"
+              stickyIndex={index}
+              layoutId
+              interactive={interactive}
+              selected={selectedId === event.id}
+              onClick={onSelect ? () => onSelect(event.id) : undefined}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  );
+
+  const dropSurface = interactive ? (
+    <PlannerBacklogBoardDroppable>{boardBody}</PlannerBacklogBoardDroppable>
+  ) : (
+    <div className={cn(FLAT_CONTAINER, "min-h-[200px] overflow-visible p-4")}>
+      {boardBody}
+    </div>
+  );
 
   return (
     <section className={cn("space-y-3 overflow-visible", className)}>
@@ -54,52 +130,7 @@ export function PlannerBacklogBoard({
         </Button>
       </div>
 
-      <div
-        ref={setNodeRef}
-        className={cn(
-          FLAT_CONTAINER,
-          "min-h-[200px] overflow-visible p-4 transition-colors",
-          isOver && "ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
-        )}
-      >
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[200px] flex-1">
-            <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Szukaj na tablicy…"
-              className={cn(INPUT_SURFACE, "pl-9")}
-            />
-          </div>
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {filtered.length}{" "}
-            {filtered.length === 1 ? "karteczka" : "karteczek"}
-          </span>
-        </div>
-
-        {filtered.length === 0 ? (
-          <div className="flex min-h-[120px] flex-col items-center justify-center rounded-lg border border-dashed border-dna-border/40 px-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              Tablica pusta — dodaj karteczkę lub upuść tu zadanie z kalendarza
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-4 overflow-visible px-1 pb-1 pt-3">
-            {filtered.map((event, index) => (
-              <PlannerBacklogCard
-                key={event.id}
-                event={event}
-                variant="sticky"
-                stickyIndex={index}
-                layoutId
-                selected={selectedId === event.id}
-                onClick={onSelect ? () => onSelect(event.id) : undefined}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      {dropSurface}
     </section>
   );
 }

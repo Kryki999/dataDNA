@@ -11,13 +11,17 @@ import {
   schedulePlannerEvent,
   updatePlannerEvent,
 } from "@/lib/actions/calendar";
-import type { PlannerEventWithMeta, PlannerIcon, PlannerLeadOption } from "@/lib/planner/types";
+import type {
+  PlannerClientOption,
+  PlannerEventWithMeta,
+  PlannerIcon,
+} from "@/lib/planner/types";
 import { addDefaultDuration } from "@/components/planner/planner-utils";
 
 type UsePlannerMutationsProps = {
   scheduled: PlannerEventWithMeta[];
   backlog: PlannerEventWithMeta[];
-  leads: PlannerLeadOption[];
+  clients: PlannerClientOption[];
   setScheduled: React.Dispatch<React.SetStateAction<PlannerEventWithMeta[]>>;
   setBacklog: React.Dispatch<React.SetStateAction<PlannerEventWithMeta[]>>;
 };
@@ -25,7 +29,7 @@ type UsePlannerMutationsProps = {
 export function usePlannerMutations({
   scheduled,
   backlog,
-  leads,
+  clients,
   setScheduled,
   setBacklog,
 }: UsePlannerMutationsProps) {
@@ -35,16 +39,23 @@ export function usePlannerMutations({
   scheduledRef.current = scheduled;
   backlogRef.current = backlog;
 
-  const findLead = useCallback(
-    (leadId: string | null) => {
-      if (!leadId) return { leadName: null, leadCompany: null };
-      const lead = leads.find((l) => l.id === leadId);
+  const findClient = useCallback(
+    (clientId: string | null) => {
+      if (!clientId) {
+        return {
+          clientName: null,
+          clientCompany: null,
+          clientCardColor: null,
+        };
+      }
+      const client = clients.find((c) => c.id === clientId);
       return {
-        leadName: lead?.name ?? null,
-        leadCompany: lead?.company ?? null,
+        clientName: client?.name ?? null,
+        clientCompany: client?.company ?? null,
+        clientCardColor: client?.cardColor ?? null,
       };
     },
-    [leads],
+    [clients],
   );
 
   const updateEventInState = useCallback(
@@ -124,13 +135,14 @@ export function usePlannerMutations({
   );
 
   const createBacklogEvent = useCallback(
-    (title: string, icon: PlannerIcon = "task") => {
+    (title: string, icon: PlannerIcon = "task", clientId?: string | null) => {
       const tempId = `temp-${Date.now()}`;
+      const clientMeta = findClient(clientId ?? null);
       const optimistic: PlannerEventWithMeta = {
         id: tempId,
         organizationId: "",
         leadId: null,
-        clientId: null,
+        clientId: clientId ?? null,
         title,
         description: "",
         icon,
@@ -141,15 +153,19 @@ export function usePlannerMutations({
         source: "manual",
         createdAt: new Date(),
         updatedAt: new Date(),
-        leadName: null,
-        leadCompany: null,
+        ...clientMeta,
         attachments: [],
       };
       setBacklog((c) => [optimistic, ...c]);
 
       startTransition(async () => {
         try {
-          const created = await createPlannerEvent({ title, icon });
+          const created = await createPlannerEvent({
+            title,
+            icon,
+            clientId: clientId ?? null,
+          });
+          const meta = findClient(created.clientId);
           setBacklog((c) =>
             c.map((e) =>
               e.id === tempId
@@ -157,8 +173,7 @@ export function usePlannerMutations({
                     ...optimistic,
                     ...created,
                     id: created.id,
-                    leadName: null,
-                    leadCompany: null,
+                    ...meta,
                     attachments: [],
                   }
                 : e,
@@ -170,18 +185,25 @@ export function usePlannerMutations({
         }
       });
     },
-    [setBacklog, startTransition],
+    [findClient, setBacklog, startTransition],
   );
 
   const createScheduledEvent = useCallback(
-    (title: string, icon: PlannerIcon, dueAt: Date, endsAt?: Date) => {
+    (
+      title: string,
+      icon: PlannerIcon,
+      dueAt: Date,
+      endsAt?: Date,
+      clientId?: string | null,
+    ) => {
       const end = endsAt ?? addDefaultDuration(dueAt);
       const tempId = `temp-${Date.now()}`;
+      const clientMeta = findClient(clientId ?? null);
       const optimistic: PlannerEventWithMeta = {
         id: tempId,
         organizationId: "",
         leadId: null,
-        clientId: null,
+        clientId: clientId ?? null,
         title,
         description: "",
         icon,
@@ -192,8 +214,7 @@ export function usePlannerMutations({
         source: "manual",
         createdAt: new Date(),
         updatedAt: new Date(),
-        leadName: null,
-        leadCompany: null,
+        ...clientMeta,
         attachments: [],
       };
       setScheduled((c) => [...c, optimistic]);
@@ -205,7 +226,9 @@ export function usePlannerMutations({
             icon,
             dueAt,
             endsAt: end,
+            clientId: clientId ?? null,
           });
+          const meta = findClient(created.clientId);
           setScheduled((c) =>
             c.map((e) =>
               e.id === tempId
@@ -215,8 +238,7 @@ export function usePlannerMutations({
                     id: created.id,
                     dueAt: created.dueAt ? new Date(created.dueAt) : dueAt,
                     endsAt: created.endsAt ? new Date(created.endsAt) : end,
-                    leadName: null,
-                    leadCompany: null,
+                    ...meta,
                     attachments: [],
                   }
                 : e,
@@ -229,12 +251,12 @@ export function usePlannerMutations({
         }
       });
     },
-    [setScheduled, startTransition],
+    [findClient, setScheduled, startTransition],
   );
 
   const patchEvent = useCallback(
     (eventId: string, patch: Parameters<typeof updatePlannerEvent>[1]) => {
-      const meta = patch.leadId !== undefined ? findLead(patch.leadId) : {};
+      const meta = patch.clientId !== undefined ? findClient(patch.clientId) : {};
       updateEventInState(eventId, (e) => ({ ...e, ...patch, ...meta }));
 
       startTransition(async () => {
@@ -245,7 +267,7 @@ export function usePlannerMutations({
         }
       });
     },
-    [findLead, startTransition, updateEventInState],
+    [findClient, startTransition, updateEventInState],
   );
 
   const completeEvent = useCallback(

@@ -12,6 +12,8 @@ type MotionDetailOverlayProps = {
   layoutId?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /** Child manages header/body/footer scroll (e.g. ClientProfileDetail). */
+  embeddedLayout?: boolean;
   className?: string;
   panelClassName?: string;
 };
@@ -22,6 +24,7 @@ export function MotionDetailOverlay({
   layoutId,
   children,
   footer,
+  embeddedLayout = false,
   className,
   panelClassName,
 }: MotionDetailOverlayProps) {
@@ -72,8 +75,9 @@ export function MotionDetailOverlay({
             <div
               className={cn(
                 "flex min-h-0 flex-1 flex-col",
-                footer ? "" : "overflow-y-auto",
-                !footer && DNA_SCROLLBAR,
+                embeddedLayout || footer
+                  ? "overflow-hidden"
+                  : cn("overflow-y-auto", DNA_SCROLLBAR),
               )}
             >
               {footer ? (

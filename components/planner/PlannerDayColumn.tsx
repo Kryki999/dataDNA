@@ -22,6 +22,7 @@ type PlannerDayColumnProps = {
   draggingId: string | null;
   onSelect: (id: string) => void;
   onResize: (id: string, endsAt: Date) => void;
+  interactive?: boolean;
 };
 
 export function PlannerDayColumn({
@@ -32,6 +33,7 @@ export function PlannerDayColumn({
   draggingId,
   onSelect,
   onResize,
+  interactive = true,
 }: PlannerDayColumnProps) {
   const header = formatDayHeader(day);
   const today = isToday(day);
@@ -81,6 +83,7 @@ export function PlannerDayColumn({
           <PlannerTimeSlot
             key={slot.id}
             id={slot.id}
+            interactive={interactive}
             className="h-[32px]"
             style={{
               top:
@@ -96,6 +99,7 @@ export function PlannerDayColumn({
             key={event.id}
             event={event}
             layoutId
+            interactive={interactive}
             isSelected={selectedId === event.id}
             isDragging={draggingId === event.id}
             onClick={() => onSelect(event.id)}

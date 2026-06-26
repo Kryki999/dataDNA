@@ -15,6 +15,7 @@ type PlannerWeekGridProps = {
   draggingId: string | null;
   onSelect: (id: string) => void;
   onResize: (id: string, endsAt: Date) => void;
+  interactive?: boolean;
 };
 
 export function PlannerWeekGrid({
@@ -25,6 +26,7 @@ export function PlannerWeekGrid({
   draggingId,
   onSelect,
   onResize,
+  interactive = true,
 }: PlannerWeekGridProps) {
   return (
     <div className={cn(FLAT_CONTAINER, "overflow-hidden p-0")}>
@@ -53,6 +55,7 @@ export function PlannerWeekGrid({
               draggingId={draggingId}
               onSelect={onSelect}
               onResize={onResize}
+              interactive={interactive}
             />
           ))}
         </div>

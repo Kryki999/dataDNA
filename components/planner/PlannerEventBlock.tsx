@@ -3,17 +3,18 @@
 import { useDraggable } from "@dnd-kit/core";
 import { motion } from "framer-motion";
 import { GripVertical } from "lucide-react";
-import type { PlannerEventWithMeta } from "@/lib/planner/types";
+import { EntityCard } from "@/components/cards/EntityCard";
 import { PlannerIconBadge } from "@/components/planner/PlannerIconBadge";
 import {
   formatEventTime,
   getEventEnd,
   getEventHeightPx,
   getEventTopPx,
-  leadLabel,
+  plannerTaskColor,
+  plannerTaskSubtitle,
 } from "@/components/planner/planner-utils";
 import { useEventResize } from "@/components/planner/hooks/useEventResize";
-import { SURFACE_CARD_NESTED } from "@/lib/ui-patterns";
+import type { PlannerEventWithMeta } from "@/lib/planner/types";
 import { cn } from "@/lib/utils";
 
 type PlannerEventBlockProps = {
@@ -24,9 +25,47 @@ type PlannerEventBlockProps = {
   isSelected?: boolean;
   layoutId?: boolean;
   compact?: boolean;
+  interactive?: boolean;
 };
 
-export function PlannerEventBlock({
+function PlannerEventBlockVisual({
+  event,
+  dueAt,
+  endsAt,
+  completed,
+  isSelected,
+  layoutId,
+  compact,
+  className,
+}: {
+  event: PlannerEventWithMeta;
+  dueAt: Date | null;
+  endsAt: Date | null;
+  completed: boolean;
+  isSelected?: boolean;
+  layoutId?: boolean;
+  compact?: boolean;
+  className?: string;
+}) {
+  return (
+    <EntityCard
+      variant="task"
+      layoutId={
+        layoutId && !isSelected ? `planner-event-${event.id}` : undefined
+      }
+      title={event.title}
+      cardColor={plannerTaskColor(event)}
+      subtitle={plannerTaskSubtitle(event)}
+      meta={dueAt ? formatEventTime(dueAt) : null}
+      leading={<PlannerIconBadge icon={event.icon} className="size-4" />}
+      selected={isSelected}
+      completed={completed}
+      className={className}
+    />
+  );
+}
+
+function PlannerEventBlockDraggable({
   event,
   onClick,
   onResize,
@@ -53,9 +92,8 @@ export function PlannerEventBlock({
 
   const heightPx =
     dueAt && endsAt && !compact
-      ? Math.max(getEventHeightPx(dueAt, endsAt), 52)
-      : 52;
-  const isShort = heightPx < 72;
+      ? Math.max(getEventHeightPx(dueAt, endsAt), 64)
+      : 64;
 
   const blockStyle: React.CSSProperties | undefined =
     dueAt && endsAt && !compact
@@ -68,45 +106,28 @@ export function PlannerEventBlock({
         }
       : undefined;
 
-  if (isSelected) {
-    return (
-      <div
-        className="absolute inset-x-1.5 invisible"
-        style={blockStyle}
-        aria-hidden
-      />
-    );
+  function handleCardClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (resize.shouldBlockClick()) return;
+    onClick();
   }
 
-  const content = (
+  const inner = (
     <>
-      <div className="flex items-center gap-2">
-        <PlannerIconBadge icon={event.icon} />
-        {dueAt ? (
-          <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
-            {formatEventTime(dueAt)}
-          </span>
-        ) : null}
-      </div>
-      <p
+      <PlannerEventBlockVisual
+        event={event}
+        dueAt={dueAt}
+        endsAt={endsAt}
+        completed={completed}
+        isSelected={isSelected}
+        layoutId={useLayout && !isDragging}
+        compact={compact}
         className={cn(
-          "mt-1 line-clamp-2 text-sm font-semibold leading-snug text-foreground",
-          isShort && "mt-0.5 line-clamp-1",
-          completed && "line-through text-muted-foreground",
+          "h-full",
+          isDragging && "opacity-40",
+          compact && "relative h-auto",
         )}
-      >
-        {event.title}
-      </p>
-      {!isShort && event.description ? (
-        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-          {event.description}
-        </p>
-      ) : null}
-      {!isShort && leadLabel(event) ? (
-        <p className="mt-1 truncate text-[10px] font-medium text-primary/90">
-          {leadLabel(event)}
-        </p>
-      ) : null}
+      />
       {!completed && dueAt && endsAt && !compact && (
         <div
           className="absolute inset-x-0 bottom-0 z-10 h-2 cursor-ns-resize bg-transparent hover:bg-primary/25"
@@ -115,52 +136,82 @@ export function PlannerEventBlock({
         />
       )}
       {!completed && !compact ? (
-        <GripVertical className="absolute bottom-1.5 right-1.5 size-3 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground/40" />
+        <GripVertical className="pointer-events-none absolute bottom-2 right-2 size-3 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground/40" />
       ) : null}
     </>
   );
-
-  const cardClass = cn(
-    SURFACE_CARD_NESTED,
-    "group absolute inset-x-1.5 z-10 overflow-hidden p-2.5",
-    "cursor-grab active:cursor-grabbing",
-    completed && "opacity-55",
-    isDragging && "opacity-40",
-    compact && "relative inset-auto h-auto",
-  );
-
-  function handleCardClick(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (resize.shouldBlockClick()) return;
-    onClick();
-  }
-
-  if (useLayout && !isDragging && !compact) {
-    return (
-      <motion.div
-        layoutId={`planner-event-${event.id}`}
-        ref={setNodeRef}
-        style={blockStyle}
-        className={cardClass}
-        onClick={handleCardClick}
-        {...listeners}
-        {...attributes}
-      >
-        {content}
-      </motion.div>
-    );
-  }
 
   return (
     <div
       ref={setNodeRef}
       style={blockStyle}
-      className={cardClass}
+      className={cn(
+        "group absolute inset-x-1.5 z-10 cursor-grab active:cursor-grabbing",
+        compact && "relative inset-auto",
+      )}
       onClick={handleCardClick}
       {...listeners}
       {...attributes}
     >
-      {content}
+      {useLayout && !isDragging && !compact && !isSelected ? (
+        <motion.div layoutId={`planner-wrap-${event.id}`} className="h-full">
+          {inner}
+        </motion.div>
+      ) : (
+        inner
+      )}
     </div>
   );
+}
+
+export function PlannerEventBlock({
+  interactive = true,
+  onClick,
+  ...props
+}: PlannerEventBlockProps) {
+  const dueAt = props.event.dueAt ? new Date(props.event.dueAt) : null;
+  const endsAt = dueAt ? getEventEnd(props.event)! : null;
+  const completed = props.event.status === "completed";
+
+  const heightPx =
+    dueAt && endsAt && !props.compact
+      ? Math.max(getEventHeightPx(dueAt, endsAt), 64)
+      : 64;
+
+  const blockStyle: React.CSSProperties | undefined =
+    dueAt && endsAt && !props.compact
+      ? {
+          top: getEventTopPx(dueAt),
+          height: heightPx,
+        }
+      : undefined;
+
+  if (!interactive) {
+    return (
+      <div
+        style={blockStyle}
+        className={cn(
+          "absolute inset-x-1.5 z-10",
+          props.compact && "relative inset-auto",
+        )}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+      >
+        <PlannerEventBlockVisual
+          event={props.event}
+          dueAt={dueAt}
+          endsAt={endsAt}
+          completed={completed}
+          isSelected={props.isSelected}
+          layoutId={props.layoutId}
+          compact={props.compact}
+          className={cn("h-full", props.compact && "relative h-auto")}
+        />
+      </div>
+    );
+  }
+
+  return <PlannerEventBlockDraggable onClick={onClick} {...props} />;
 }

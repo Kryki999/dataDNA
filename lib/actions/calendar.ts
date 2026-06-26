@@ -6,9 +6,10 @@ import { db } from "@/lib/db";
 import {
   calendarEventAttachments,
   calendarEvents,
+  clients,
   leads,
 } from "@/lib/db/schema";
-import { addLeadNote } from "@/lib/actions/leads";
+import { addClientNote } from "@/lib/actions/notes";
 import {
   plannerAttachmentExtension,
   validatePlannerAttachment,
@@ -28,6 +29,21 @@ async function deleteStoredBlob(url: string) {
   }
 }
 
+async function getClientIdForLead(leadId: string, organizationId: string) {
+  const [client] = await db
+    .select({ id: clients.id })
+    .from(clients)
+    .where(
+      and(
+        eq(clients.migratedFromLeadId, leadId),
+        eq(clients.organizationId, organizationId),
+      ),
+    )
+    .limit(1);
+
+  return client?.id ?? null;
+}
+
 async function syncLeadFollowUp(leadId: string, dueAt: Date | null) {
   const now = new Date();
   await db
@@ -42,11 +58,12 @@ export async function getPlannerData(from: Date, to: Date) {
   const scheduledRows = await db
     .select({
       event: calendarEvents,
-      leadName: leads.name,
-      leadCompany: leads.company,
+      clientName: clients.name,
+      clientCompany: clients.company,
+      clientCardColor: clients.cardColor,
     })
     .from(calendarEvents)
-    .leftJoin(leads, eq(calendarEvents.leadId, leads.id))
+    .leftJoin(clients, eq(calendarEvents.clientId, clients.id))
     .where(
       and(
         eq(calendarEvents.organizationId, organizationId),
@@ -60,11 +77,12 @@ export async function getPlannerData(from: Date, to: Date) {
   const backlogRows = await db
     .select({
       event: calendarEvents,
-      leadName: leads.name,
-      leadCompany: leads.company,
+      clientName: clients.name,
+      clientCompany: clients.company,
+      clientCardColor: clients.cardColor,
     })
     .from(calendarEvents)
-    .leftJoin(leads, eq(calendarEvents.leadId, leads.id))
+    .leftJoin(clients, eq(calendarEvents.clientId, clients.id))
     .where(
       and(
         eq(calendarEvents.organizationId, organizationId),
@@ -98,25 +116,32 @@ export async function getPlannerData(from: Date, to: Date) {
 
   const mapRow = (row: (typeof scheduledRows)[number]): PlannerEventWithMeta => ({
     ...row.event,
-    leadName: row.leadName,
-    leadCompany: row.leadCompany,
+    clientName: row.clientName,
+    clientCompany: row.clientCompany,
+    clientCardColor: row.clientCardColor,
     attachments: attachmentsByEvent.get(row.event.id) ?? [],
   });
 
-  const activeLeads = await db
+  const activeClients = await db
     .select({
-      id: leads.id,
-      name: leads.name,
-      company: leads.company,
+      id: clients.id,
+      name: clients.name,
+      company: clients.company,
+      cardColor: clients.cardColor,
     })
-    .from(leads)
-    .where(eq(leads.organizationId, organizationId))
-    .orderBy(leads.name);
+    .from(clients)
+    .where(
+      and(
+        eq(clients.organizationId, organizationId),
+        eq(clients.isArchived, false),
+      ),
+    )
+    .orderBy(clients.name);
 
   return {
     scheduled: scheduledRows.map(mapRow),
     backlog: backlogRows.map(mapRow),
-    leads: activeLeads,
+    clients: activeClients,
   };
 }
 
@@ -137,21 +162,26 @@ export async function upsertFollowUpFromLead(
 
   if (!lead) return null;
 
+  const clientId = await getClientIdForLead(leadId, organizationId);
   const title = `Follow-up: ${lead.company ?? lead.name}`;
   const endsAt = new Date(dueAt.getTime() + DEFAULT_EVENT_DURATION_MS);
 
   await syncLeadFollowUp(leadId, dueAt);
 
+  const followUpConditions = [
+    eq(calendarEvents.organizationId, organizationId),
+    eq(calendarEvents.status, "pending"),
+  ];
+  if (clientId) {
+    followUpConditions.push(eq(calendarEvents.clientId, clientId));
+  } else {
+    followUpConditions.push(eq(calendarEvents.leadId, leadId));
+  }
+
   const [existing] = await db
     .select({ id: calendarEvents.id })
     .from(calendarEvents)
-    .where(
-      and(
-        eq(calendarEvents.organizationId, organizationId),
-        eq(calendarEvents.leadId, leadId),
-        eq(calendarEvents.status, "pending"),
-      ),
-    )
+    .where(and(...followUpConditions))
     .limit(1);
 
   if (existing) {
@@ -163,13 +193,15 @@ export async function upsertFollowUpFromLead(
         endsAt,
         source,
         icon: "follow_up",
+        clientId: clientId ?? undefined,
         updatedAt: new Date(),
       })
       .where(eq(calendarEvents.id, existing.id));
   } else {
     await db.insert(calendarEvents).values({
       organizationId,
-      leadId,
+      leadId: clientId ? null : leadId,
+      clientId,
       title,
       dueAt,
       endsAt,
@@ -258,9 +290,14 @@ export async function completeCalendarEvent(eventId: string) {
     )
     .returning();
 
-  if (event?.leadId) {
+  if (event?.clientId) {
+    await addClientNote(event.clientId, `Wykonano: ${event.title}`);
+  } else if (event?.leadId) {
     await syncLeadFollowUp(event.leadId, null);
-    await addLeadNote(event.leadId, `Wykonano: ${event.title}`);
+    const clientId = await getClientIdForLead(event.leadId, organizationId);
+    if (clientId) {
+      await addClientNote(clientId, `Wykonano: ${event.title}`);
+    }
   }
 
   revalidateDashboard();
@@ -299,16 +336,25 @@ export async function createManualEvent(input: {
   dueAt: Date;
   endsAt?: Date;
   leadId?: string;
+  clientId?: string;
 }) {
   const organizationId = await getCurrentOrganizationId();
   const endsAt =
     input.endsAt ?? new Date(input.dueAt.getTime() + DEFAULT_EVENT_DURATION_MS);
 
+  let clientId = input.clientId ?? null;
+  let leadId = input.leadId ?? null;
+  if (!clientId && leadId) {
+    clientId = await getClientIdForLead(leadId, organizationId);
+    if (clientId) leadId = null;
+  }
+
   const [event] = await db
     .insert(calendarEvents)
     .values({
       organizationId,
-      leadId: input.leadId ?? null,
+      leadId,
+      clientId,
       title: input.title.trim(),
       dueAt: input.dueAt,
       endsAt,
@@ -331,6 +377,7 @@ export async function createPlannerEvent(input: {
   dueAt?: Date | null;
   endsAt?: Date | null;
   leadId?: string | null;
+  clientId?: string | null;
   icon?: PlannerIcon;
   description?: string;
 }) {
@@ -346,11 +393,19 @@ export async function createPlannerEvent(input: {
         ? new Date(dueAt.getTime() + DEFAULT_EVENT_DURATION_MS)
         : null;
 
+  let clientId = input.clientId ?? null;
+  let leadId = input.leadId ?? null;
+  if (!clientId && leadId) {
+    clientId = await getClientIdForLead(leadId, organizationId);
+    if (clientId) leadId = null;
+  }
+
   const [event] = await db
     .insert(calendarEvents)
     .values({
       organizationId,
-      leadId: input.leadId ?? null,
+      leadId,
+      clientId,
       title,
       description: input.description?.trim() ?? "",
       icon: input.icon ?? "task",
@@ -377,6 +432,7 @@ export async function updatePlannerEvent(
     dueAt?: Date | null;
     endsAt?: Date | null;
     leadId?: string | null;
+    clientId?: string | null;
     icon?: PlannerIcon;
   },
 ) {
@@ -390,7 +446,20 @@ export async function updatePlannerEvent(
   if (patch.title !== undefined) updates.title = patch.title.trim();
   if (patch.description !== undefined) updates.description = patch.description;
   if (patch.icon !== undefined) updates.icon = patch.icon;
-  if (patch.leadId !== undefined) updates.leadId = patch.leadId;
+  if (patch.clientId !== undefined) {
+    updates.clientId = patch.clientId;
+    if (patch.clientId) updates.leadId = null;
+  }
+  if (patch.leadId !== undefined) {
+    updates.leadId = patch.leadId;
+    if (patch.leadId) {
+      const resolved = await getClientIdForLead(patch.leadId, organizationId);
+      if (resolved) {
+        updates.clientId = resolved;
+        updates.leadId = null;
+      }
+    }
+  }
   if (patch.dueAt !== undefined) updates.dueAt = patch.dueAt;
   if (patch.endsAt !== undefined) updates.endsAt = patch.endsAt;
 

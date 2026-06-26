@@ -12,6 +12,7 @@ import {
 } from "date-fns";
 import { pl } from "date-fns/locale";
 import type { PlannerEventWithMeta } from "@/lib/planner/types";
+import type { PlannerIcon } from "@/lib/planner/types";
 import {
   DEFAULT_EVENT_DURATION_MS,
   GRID_END_HOUR,
@@ -19,6 +20,7 @@ import {
   HOUR_HEIGHT_PX,
   SLOT_MINUTES,
 } from "@/lib/planner/types";
+import { PLANNER_ICON_COLORS } from "@/lib/planner/colors";
 
 export function getWeekDays(anchor: Date): Date[] {
   const weekStart = startOfWeek(anchor, { weekStartsOn: 1 });
@@ -116,8 +118,22 @@ export function generateDaySlots(day: Date) {
   return slots;
 }
 
+export function clientLabel(event: PlannerEventWithMeta) {
+  return event.clientCompany ?? event.clientName ?? null;
+}
+
+export function plannerTaskColor(event: PlannerEventWithMeta) {
+  if (event.clientCardColor) return event.clientCardColor;
+  return PLANNER_ICON_COLORS[event.icon] ?? "slate";
+}
+
+export function plannerTaskSubtitle(event: PlannerEventWithMeta) {
+  return clientLabel(event);
+}
+
+/** @deprecated Use clientLabel */
 export function leadLabel(event: PlannerEventWithMeta) {
-  return event.leadCompany ?? event.leadName ?? null;
+  return clientLabel(event);
 }
 
 export function addDefaultDuration(start: Date) {

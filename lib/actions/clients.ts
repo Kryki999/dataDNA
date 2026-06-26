@@ -1,8 +1,14 @@
 "use server";
 
+import { del, put } from "@vercel/blob";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { clients, notes, pipelineDeals } from "@/lib/db/schema";
+import {
+  avatarExtension,
+  isVercelBlobUrl,
+  validateAvatarFile,
+} from "@/lib/avatar";
 import {
   FUZZY_MATCH_THRESHOLD,
   getClientDisplayName,
@@ -167,6 +173,67 @@ export async function updateClient(
 
   revalidateDashboard();
   return client ?? null;
+}
+
+async function deleteStoredCover(url: string | null) {
+  if (!url || !isVercelBlobUrl(url)) return;
+  try {
+    await del(url);
+  } catch {
+    // Ignore missing blobs.
+  }
+}
+
+export async function uploadClientCover(clientId: string, formData: FormData) {
+  const organizationId = await getCurrentOrganizationId();
+
+  const client = await getClientById(clientId);
+  if (!client) throw new Error("Nie znaleziono klienta");
+
+  const file = formData.get("cover");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Nie wybrano pliku");
+  }
+
+  const validationError = validateAvatarFile(file);
+  if (validationError) throw new Error(validationError);
+
+  const pathname = `clients/${organizationId}/${clientId}/${Date.now()}.${avatarExtension(file)}`;
+  const blob = await put(pathname, file, {
+    access: "public",
+    addRandomSuffix: false,
+    contentType: file.type,
+  });
+
+  const [updated] = await db
+    .update(clients)
+    .set({ coverUrl: blob.url, updatedAt: new Date() })
+    .where(
+      and(eq(clients.id, clientId), eq(clients.organizationId, organizationId)),
+    )
+    .returning();
+
+  await deleteStoredCover(client.coverUrl);
+  revalidateDashboard();
+  return updated ?? null;
+}
+
+export async function removeClientCover(clientId: string) {
+  const organizationId = await getCurrentOrganizationId();
+  const client = await getClientById(clientId);
+  if (!client) throw new Error("Nie znaleziono klienta");
+
+  const [updated] = await db
+    .update(clients)
+    .set({ coverUrl: null, updatedAt: new Date() })
+    .where(
+      and(eq(clients.id, clientId), eq(clients.organizationId, organizationId)),
+    )
+    .returning();
+
+  await deleteStoredCover(client.coverUrl);
+  revalidateDashboard();
+  return updated ?? null;
 }
 
 async function clientHasHistory(clientId: string, organizationId: string) {

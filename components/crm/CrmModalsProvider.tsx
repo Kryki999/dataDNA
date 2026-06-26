@@ -97,6 +97,7 @@ export function CrmModalsProvider({ children }: { children: React.ReactNode }) {
           open={clientOpen}
           onClose={() => setClientOpen(false)}
           layoutId={client ? `client-${client.id}` : undefined}
+          embeddedLayout
           panelClassName="!flex !max-h-[min(88vh,760px)] !flex-col !overflow-hidden p-0"
         >
           {client && clientOpen ? (
@@ -115,6 +116,7 @@ export function CrmModalsProvider({ children }: { children: React.ReactNode }) {
           open={dealOpen}
           onClose={() => setDealOpen(false)}
           layoutId={deal ? `pipeline-deal-${deal.id}` : undefined}
+          embeddedLayout
           panelClassName="!flex !max-h-[min(88vh,760px)] !flex-col !overflow-hidden p-0"
         >
           {deal && dealOpen ? (

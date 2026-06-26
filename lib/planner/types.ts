@@ -1,15 +1,23 @@
-import type { calendarEventAttachments, calendarEvents, leads } from "@/lib/db/schema";
+import type {
+  calendarEventAttachments,
+  calendarEvents,
+  clients,
+} from "@/lib/db/schema";
 
 export type PlannerEventRow = typeof calendarEvents.$inferSelect;
 export type PlannerAttachmentRow = typeof calendarEventAttachments.$inferSelect;
-export type PlannerLeadOption = Pick<
-  typeof leads.$inferSelect,
-  "id" | "name" | "company"
+export type PlannerClientOption = Pick<
+  typeof clients.$inferSelect,
+  "id" | "name" | "company" | "cardColor"
 >;
 
+/** @deprecated Use PlannerClientOption */
+export type PlannerLeadOption = PlannerClientOption;
+
 export type PlannerEventWithMeta = PlannerEventRow & {
-  leadName: string | null;
-  leadCompany: string | null;
+  clientName: string | null;
+  clientCompany: string | null;
+  clientCardColor: string | null;
   attachments: PlannerAttachmentRow[];
 };
 

@@ -7,9 +7,14 @@ type PlannerTimeSlotProps = {
   id: string;
   className?: string;
   style?: React.CSSProperties;
+  interactive?: boolean;
 };
 
-export function PlannerTimeSlot({ id, className, style }: PlannerTimeSlotProps) {
+function PlannerTimeSlotDroppable({
+  id,
+  className,
+  style,
+}: Omit<PlannerTimeSlotProps, "interactive">) {
   const { isOver, setNodeRef } = useDroppable({ id });
 
   return (
@@ -22,5 +27,22 @@ export function PlannerTimeSlot({ id, className, style }: PlannerTimeSlotProps) 
         className,
       )}
     />
+  );
+}
+
+export function PlannerTimeSlot({
+  id,
+  className,
+  style,
+  interactive = true,
+}: PlannerTimeSlotProps) {
+  if (!interactive) {
+    return (
+      <div style={style} className={cn("absolute inset-x-0", className)} />
+    );
+  }
+
+  return (
+    <PlannerTimeSlotDroppable id={id} className={className} style={style} />
   );
 }

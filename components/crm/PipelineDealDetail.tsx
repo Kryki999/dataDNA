@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { MoreHorizontal, X } from "lucide-react";
 import { toast } from "sonner";
+import { ClientCardColorControl } from "@/components/cards/ClientCardColorControl";
 import { ClientTimelineFeed } from "@/components/crm/ClientTimelineFeed";
 import { ProjectKanban } from "@/components/crm/ProjectKanban";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import {
   type PipelineDealStatus,
 } from "@/lib/crm/pipeline-deals";
 import {
+  DNA_SCROLLBAR,
   EYEBROW,
   INPUT_PLAIN_NUMERIC,
   INPUT_SURFACE,
@@ -116,15 +118,31 @@ export function PipelineDealDetail({
   const projectLeadId = deal.client.migratedFromLeadId ?? deal.clientId;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="shrink-0 space-y-2 border-b border-dna-border p-5">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="shrink-0 space-y-4 border-b border-dna-border p-5">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className={EYEBROW}>{PIPELINE_DEAL_STATUS_LABELS[status]}</p>
             <h2 className={MODAL_TITLE}>{deal.displayName}</h2>
             <p className="text-sm text-muted-foreground">{deal.title}</p>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 items-center gap-0.5">
+            {!isClosed ? (
+              <ClientCardColorControl
+                clientId={deal.clientId}
+                value={deal.client.cardColor}
+                onUpdated={(client) => {
+                  const next = {
+                    ...deal,
+                    client,
+                    cardColor: client.cardColor,
+                  };
+                  setDeal(next);
+                  onUpdated(next);
+                }}
+                size="sm"
+              />
+            ) : null}
             {!isClosed ? (
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -165,13 +183,22 @@ export function PipelineDealDetail({
         ) : null}
       </div>
 
-      <Tabs defaultValue="feed" className="flex min-h-0 flex-1 flex-col">
-        <TabsList className="mx-5 mt-4 w-auto shrink-0 justify-start">
+      <Tabs
+        defaultValue="feed"
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+      >
+        <TabsList className="mx-5 mt-2 w-auto shrink-0 justify-start">
           <TabsTrigger value="feed">Oś czasu</TabsTrigger>
           <TabsTrigger value="details">Szczegóły</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="feed" className="mt-0 space-y-3 px-5 py-4">
+        <TabsContent
+          value="feed"
+          className={cn(
+            "mt-0 min-h-0 flex-1 overflow-y-auto space-y-3 px-5 py-4",
+            DNA_SCROLLBAR,
+          )}
+        >
           <Textarea
             value={noteDraft}
             onChange={(e) => setNoteDraft(e.target.value)}
@@ -191,7 +218,13 @@ export function PipelineDealDetail({
           <ClientTimelineFeed key={feedKey} clientId={deal.clientId} />
         </TabsContent>
 
-        <TabsContent value="details" className="mt-0 space-y-3 px-5 py-4">
+        <TabsContent
+          value="details"
+          className={cn(
+            "mt-0 min-h-0 flex-1 overflow-y-auto space-y-3 px-5 py-4",
+            DNA_SCROLLBAR,
+          )}
+        >
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -231,7 +264,7 @@ export function PipelineDealDetail({
         </TabsContent>
       </Tabs>
 
-      <div className="shrink-0 border-t border-dna-border p-4">
+      <div className="shrink-0 border-t border-dna-border bg-dna-surface p-4">
         <Button
           className="h-11 w-full bg-dna-signal text-base font-semibold hover:bg-dna-signal/90"
           onClick={handleSave}

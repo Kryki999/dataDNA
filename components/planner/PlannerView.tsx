@@ -35,9 +35,10 @@ import {
   plannerCollisionDetection,
 } from "@/components/planner/planner-utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useMounted } from "@/hooks/use-mounted";
 import type {
   PlannerEventWithMeta,
-  PlannerLeadOption,
+  PlannerClientOption,
   PlannerIcon,
 } from "@/lib/planner/types";
 import { Button } from "@/components/ui/button";
@@ -46,14 +47,15 @@ import { cn } from "@/lib/utils";
 type PlannerViewProps = {
   scheduled: PlannerEventWithMeta[];
   backlog: PlannerEventWithMeta[];
-  leads: PlannerLeadOption[];
+  clients: PlannerClientOption[];
 };
 
 export function PlannerView({
   scheduled: initialScheduled,
   backlog: initialBacklog,
-  leads,
+  clients,
 }: PlannerViewProps) {
+  const mounted = useMounted();
   const isMobile = useIsMobile();
   const [scheduled, setScheduled] = useState(initialScheduled);
   const [backlog, setBacklog] = useState(initialBacklog);
@@ -77,7 +79,7 @@ export function PlannerView({
   const mutations = usePlannerMutations({
     scheduled,
     backlog,
-    leads,
+    clients,
     setScheduled,
     setBacklog,
   });
@@ -162,6 +164,78 @@ export function PlannerView({
     mutations.updateEventInState(eventId, (e) => ({ ...e, attachments }));
   }
 
+  const plannerBoard = (
+    <LayoutGroup id="planner-events">
+      <div className="flex flex-col gap-5">
+        {isMobile ? (
+          <PlannerDayAgenda
+            day={mobileDay}
+            events={scheduled}
+            backlog={backlog}
+            hideCompleted={hideCompleted}
+            selectedId={selectedId}
+            draggingId={draggingId}
+            onSelect={setSelectedId}
+            onResize={mutations.resizeEvent}
+            onPrevDay={() =>
+              setMobileDay((d) => new Date(d.getTime() - 86400000))
+            }
+            onNextDay={() =>
+              setMobileDay((d) => new Date(d.getTime() + 86400000))
+            }
+            onScheduleBacklog={setSlotPickerEventId}
+            interactive={mounted}
+          />
+        ) : (
+          <PlannerWeekGrid
+            weekDays={weekDays}
+            events={scheduled}
+            hideCompleted={hideCompleted}
+            selectedId={selectedId}
+            draggingId={draggingId}
+            onSelect={setSelectedId}
+            onResize={mutations.resizeEvent}
+            interactive={mounted}
+          />
+        )}
+
+        {backlogOpen && !isMobile ? (
+          <PlannerBacklogBoard
+            events={backlog}
+            onQuickAddClick={() => setQuickAddOpen(true)}
+            onSelect={setSelectedId}
+            selectedId={selectedId}
+            interactive={mounted}
+          />
+        ) : null}
+      </div>
+
+      <MotionDetailOverlay
+        open={Boolean(selectedEvent && selectedId)}
+        onClose={closeDetail}
+        layoutId={selectedId ? `planner-event-${selectedId}` : undefined}
+      >
+        {selectedEvent ? (
+          <PlannerEventDetail
+            event={selectedEvent}
+            clients={clients}
+            onPatch={mutations.patchEvent}
+            onComplete={mutations.completeEvent}
+            onDelete={mutations.removeEvent}
+            onClose={closeDetail}
+                onAttachmentsChange={handleAttachmentsChange}
+                onClientColorUpdated={(eventId, cardColor) => {
+                  mutations.updateEventInState(eventId, (e) => ({
+                    ...e,
+                    clientCardColor: cardColor,
+                  }));
+                }}
+              />
+        ) : null}
+      </MotionDetailOverlay>
+    </LayoutGroup>
+  );
+
   return (
     <DashboardPage full className="space-y-4">
       <PlannerToolbar
@@ -195,88 +269,32 @@ export function PlannerView({
         </div>
       ) : null}
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={plannerCollisionDetection}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <LayoutGroup id="planner-events">
-          <div className="flex flex-col gap-5">
-            {isMobile ? (
-              <PlannerDayAgenda
-                day={mobileDay}
-                events={scheduled}
-                backlog={backlog}
-                hideCompleted={hideCompleted}
-                selectedId={selectedId}
-                draggingId={draggingId}
-                onSelect={setSelectedId}
-                onResize={mutations.resizeEvent}
-                onPrevDay={() =>
-                  setMobileDay((d) => new Date(d.getTime() - 86400000))
-                }
-                onNextDay={() =>
-                  setMobileDay((d) => new Date(d.getTime() + 86400000))
-                }
-                onScheduleBacklog={setSlotPickerEventId}
-              />
-            ) : (
-              <PlannerWeekGrid
-                weekDays={weekDays}
-                events={scheduled}
-                hideCompleted={hideCompleted}
-                selectedId={selectedId}
-                draggingId={draggingId}
-                onSelect={setSelectedId}
-                onResize={mutations.resizeEvent}
-              />
-            )}
+      {mounted ? (
+        <DndContext
+          id="planner-dnd"
+          sensors={sensors}
+          collisionDetection={plannerCollisionDetection}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          {plannerBoard}
 
-            {backlogOpen && !isMobile ? (
-              <PlannerBacklogBoard
-                events={backlog}
-                onQuickAddClick={() => setQuickAddOpen(true)}
-                onSelect={setSelectedId}
-                selectedId={selectedId}
-              />
-            ) : null}
-          </div>
-
-          <MotionDetailOverlay
-            open={Boolean(selectedEvent && selectedId)}
-            onClose={closeDetail}
-            layoutId={
-              selectedId ? `planner-event-${selectedId}` : undefined
-            }
-          >
-            {selectedEvent ? (
-              <PlannerEventDetail
-                event={selectedEvent}
-                leads={leads}
-                onPatch={mutations.patchEvent}
-                onComplete={mutations.completeEvent}
-                onDelete={mutations.removeEvent}
-                onClose={closeDetail}
-                onAttachmentsChange={handleAttachmentsChange}
-              />
-            ) : null}
-          </MotionDetailOverlay>
-        </LayoutGroup>
-
-        <DragOverlay>
-          {activeDragEvent ? (
-            <div className={cn("w-52 rounded-lg p-3", SURFACE_CARD, "border border-dna-signal/40")}>
-              <div className="flex items-center gap-2">
-                <PlannerIconBadge icon={activeDragEvent.icon} />
-                <span className="truncate text-xs font-semibold text-foreground">
-                  {activeDragEvent.title}
-                </span>
+          <DragOverlay>
+            {activeDragEvent ? (
+              <div className={cn("w-52 rounded-lg p-3", SURFACE_CARD, "border border-dna-signal/40")}>
+                <div className="flex items-center gap-2">
+                  <PlannerIconBadge icon={activeDragEvent.icon} />
+                  <span className="truncate text-xs font-semibold text-foreground">
+                    {activeDragEvent.title}
+                  </span>
+                </div>
               </div>
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      ) : (
+        plannerBoard
+      )}
 
       <MotionDetailOverlay open={quickAddOpen} onClose={closeQuickAdd}>
         <PlannerQuickAdd

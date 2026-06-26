@@ -2,13 +2,22 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import { motion } from "framer-motion";
-import type { PlannerEventWithMeta } from "@/lib/planner/types";
+import { EntityCard } from "@/components/cards/EntityCard";
 import { PlannerIconBadge } from "@/components/planner/PlannerIconBadge";
-import { leadLabel } from "@/components/planner/planner-utils";
-import { SURFACE_CARD_NESTED } from "@/lib/ui-patterns";
+import {
+  formatEventTime,
+  plannerTaskColor,
+  plannerTaskSubtitle,
+} from "@/components/planner/planner-utils";
+import type { PlannerEventWithMeta } from "@/lib/planner/types";
 import { cn } from "@/lib/utils";
 
-const STICKY_ROTATIONS = ["-rotate-1", "rotate-1", "rotate-[0.5deg]", "-rotate-[0.5deg]"] as const;
+const STICKY_ROTATIONS = [
+  "-rotate-1",
+  "rotate-1",
+  "rotate-[0.5deg]",
+  "-rotate-[0.5deg]",
+] as const;
 
 type PlannerBacklogCardProps = {
   event: PlannerEventWithMeta;
@@ -19,115 +28,118 @@ type PlannerBacklogCardProps = {
   stickyIndex?: number;
   layoutId?: boolean;
   selected?: boolean;
+  interactive?: boolean;
 };
 
-export function PlannerBacklogCard({
+function PlannerBacklogCardVisual({
   event,
-  onSchedule,
-  onClick,
-  isMobile,
   variant = "default",
   stickyIndex = 0,
-  layoutId = false,
-  selected = false,
-}: PlannerBacklogCardProps) {
+  layoutId,
+  isDragging,
+  selected,
+  onClick,
+  isMobile,
+  onSchedule,
+}: PlannerBacklogCardProps & { isDragging?: boolean }) {
+  const isSticky = variant === "sticky";
+  const completed = event.status === "completed";
+  const meta = event.dueAt ? formatEventTime(new Date(event.dueAt)) : null;
+  const rotation = STICKY_ROTATIONS[stickyIndex % STICKY_ROTATIONS.length];
+
+  const card = (
+    <EntityCard
+      variant="task"
+      layoutId={
+        layoutId && !isDragging ? `planner-event-${event.id}` : undefined
+      }
+      title={event.title}
+      cardColor={plannerTaskColor(event)}
+      subtitle={plannerTaskSubtitle(event)}
+      meta={meta}
+      leading={<PlannerIconBadge icon={event.icon} className="size-4" />}
+      selected={selected}
+      completed={completed}
+      onClick={onClick}
+      className={cn(
+        isSticky && "w-[200px] shrink-0",
+        isDragging && "opacity-60 shadow-xl",
+      )}
+    >
+      {isMobile && onSchedule ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSchedule();
+          }}
+          className="absolute right-2 top-2 rounded border border-dna-signal/40 px-2 py-0.5 text-xs text-primary hover:bg-primary/10"
+        >
+          +
+        </button>
+      ) : null}
+    </EntityCard>
+  );
+
+  return (
+    <div className={cn(isSticky && rotation, isSticky && "relative")}>
+      {isSticky ? (
+        <div
+          className="pointer-events-none absolute inset-x-8 -top-1 z-10 h-2 rounded-b-sm bg-primary/25"
+          aria-hidden
+        />
+      ) : null}
+      {card}
+    </div>
+  );
+}
+
+function PlannerBacklogCardDraggable(props: PlannerBacklogCardProps) {
+  const { event, onClick, layoutId, selected, variant, stickyIndex } = props;
+  const isSticky = variant === "sticky";
+
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: event.id,
       data: { type: "backlog", event },
     });
 
-  const isSticky = variant === "sticky";
-  const rotation = STICKY_ROTATIONS[stickyIndex % STICKY_ROTATIONS.length];
-
-  if (selected) {
-    return (
-      <div
-        className={cn(
-          "invisible rounded-lg",
-          isSticky ? "h-24 w-[192px]" : "min-h-[80px]",
-        )}
-        aria-hidden
-      />
-    );
-  }
-
-  const inner = (
+  const wrapped = (
     <div
       ref={setNodeRef}
       style={{
         transform: transform
-          ? `translate3d(${transform.x}px, ${transform.y}px, 0) rotate(0deg)`
+          ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
           : undefined,
       }}
       className={cn(
         "cursor-grab touch-none active:cursor-grabbing",
-        isSticky
-          ? cn(
-              "relative w-[192px] shrink-0 overflow-visible rounded-lg p-3 pt-3 transition-shadow",
-              SURFACE_CARD_NESTED,
-              "hover:brightness-105",
-              rotation,
-              isDragging && "z-50 opacity-60 shadow-xl",
-            )
-          : cn(
-              SURFACE_CARD_NESTED,
-              "rounded-lg p-3",
-              isDragging && "opacity-40",
-            ),
-        onClick && "cursor-pointer",
+        isSticky && "shrink-0",
       )}
       onClick={onClick}
       {...listeners}
       {...attributes}
     >
-      {isSticky ? (
-        <div
-          className="pointer-events-none absolute inset-x-6 top-0 h-2.5 rounded-b-sm bg-primary/30"
-          aria-hidden
-        />
-      ) : null}
-
-      <div className="relative flex items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-1 items-start gap-2">
-          <PlannerIconBadge icon={event.icon} />
-          <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
-              {event.title}
-            </p>
-            {event.description ? (
-              <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                {event.description}
-              </p>
-            ) : null}
-            {leadLabel(event) ? (
-              <p className="mt-1.5 truncate text-[10px] font-medium text-primary/90">
-                {leadLabel(event)}
-              </p>
-            ) : null}
-          </div>
-        </div>
-        {isMobile && onSchedule ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSchedule();
-            }}
-            className="shrink-0 rounded border border-dna-signal/40 px-2 py-0.5 text-xs text-primary hover:bg-primary/10"
-          >
-            +
-          </button>
-        ) : null}
-      </div>
+      <PlannerBacklogCardVisual {...props} isDragging={isDragging} />
     </div>
   );
 
-  if (layoutId && !isDragging) {
+  if (layoutId && !isDragging && !selected) {
     return (
-      <motion.div layoutId={`planner-event-${event.id}`}>{inner}</motion.div>
+      <motion.div layoutId={`planner-wrap-${event.id}`}>{wrapped}</motion.div>
     );
   }
 
-  return inner;
+  return wrapped;
+}
+
+export function PlannerBacklogCard({
+  interactive = true,
+  ...props
+}: PlannerBacklogCardProps) {
+  if (!interactive) {
+    return <PlannerBacklogCardVisual {...props} />;
+  }
+
+  return <PlannerBacklogCardDraggable {...props} />;
 }
