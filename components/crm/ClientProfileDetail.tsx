@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { ImageIcon, MoreHorizontal, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { ClientCardColorControl } from "@/components/cards/ClientCardColorControl";
+import { ClientClosedProjects } from "@/components/crm/ClientClosedProjects";
 import { ClientTimelineFeed } from "@/components/crm/ClientTimelineFeed";
 import { Button } from "@/components/ui/button";
 import {
@@ -282,6 +283,7 @@ export function ClientProfileDetail({
             DNA_SCROLLBAR,
           )}
         >
+          <ClientClosedProjects clientId={client.id} />
           <ClientTimelineFeed clientId={client.id} />
         </TabsContent>
 

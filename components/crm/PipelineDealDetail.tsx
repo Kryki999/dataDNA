@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   closePipelineDeal,
+  reactivatePipelineDeal,
   updatePipelineDeal,
   type PipelineDealWithMeta,
 } from "@/lib/actions/pipeline-deals";
@@ -112,6 +113,23 @@ export function PipelineDealDetail({
     });
   }
 
+  function handleReactivate(targetStatus: PipelineDealStatus) {
+    startTransition(async () => {
+      try {
+        const revived = await reactivatePipelineDeal(deal.id, targetStatus);
+        if (revived) {
+          const next = { ...deal, ...revived, status: targetStatus };
+          setDeal(next);
+          setStatus(targetStatus);
+          onUpdated(next);
+          toast.success("Przywrócono projekt do Kanbanu");
+        }
+      } catch {
+        toast.error("Nie udało się przywrócić projektu");
+      }
+    });
+  }
+
   const isClosed =
     status === "closed_won" || status === "closed_lost";
 
@@ -182,6 +200,28 @@ export function PipelineDealDetail({
           </button>
         ) : null}
       </div>
+
+      {isClosed ? (
+        <div className="mx-5 mt-3 shrink-0 space-y-3 rounded-xl border border-amber-500/25 bg-amber-500/5 p-3">
+          <p className="text-sm text-foreground">
+            Ten projekt jest zamknięty i nie widać go w Kanbanie. Jeśli to
+            pomyłka, przywróć go do wybranego etapu.
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {PIPELINE_DEAL_COLUMNS.map((col) => (
+              <button
+                key={col.id}
+                type="button"
+                onClick={() => handleReactivate(col.id)}
+                disabled={isPending}
+                className="rounded-md border border-amber-500/30 bg-dna-surface/80 px-2 py-1 text-[11px] font-medium text-foreground hover:bg-amber-500/10"
+              >
+                Przywróć: {col.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <Tabs
         defaultValue="feed"

@@ -15,6 +15,7 @@ import { addSystemNote } from "@/lib/actions/notes";
 import {
   ACTIVE_PIPELINE_DEAL_STATUSES,
   CLOSED_PIPELINE_DEAL_STATUSES,
+  PIPELINE_DEAL_STATUS_LABELS,
   type PipelineDealStatus,
 } from "@/lib/crm/pipeline-deals";
 import type { LeadSourceId } from "@/lib/crm/pipeline";
@@ -288,12 +289,21 @@ export async function updatePipelineDeal(
   input: Partial<PipelineDealInput>,
 ) {
   const organizationId = await getCurrentOrganizationId();
+  const now = new Date();
+
+  const statusPatch: Partial<typeof pipelineDeals.$inferInsert> = {};
+  if (input.status !== undefined) {
+    statusPatch.status = input.status;
+    statusPatch.closedAt = CLOSED_PIPELINE_DEAL_STATUSES.includes(input.status)
+      ? now
+      : null;
+  }
 
   const [deal] = await db
     .update(pipelineDeals)
     .set({
       ...(input.title !== undefined ? { title: input.title.trim() } : {}),
-      ...(input.status !== undefined ? { status: input.status } : {}),
+      ...statusPatch,
       ...(input.projectValuePln !== undefined
         ? { projectValuePln: input.projectValuePln }
         : {}),
@@ -301,7 +311,7 @@ export async function updatePipelineDeal(
       ...(input.nextFollowUpAt !== undefined
         ? { nextFollowUpAt: input.nextFollowUpAt }
         : {}),
-      updatedAt: new Date(),
+      updatedAt: now,
     })
     .where(
       and(
@@ -313,6 +323,53 @@ export async function updatePipelineDeal(
 
   revalidateDashboard();
   return deal ?? null;
+}
+
+export async function reactivatePipelineDeal(
+  dealId: string,
+  status: PipelineDealStatus = "negotiation",
+) {
+  if (
+    !ACTIVE_PIPELINE_DEAL_STATUSES.includes(
+      status as (typeof ACTIVE_PIPELINE_DEAL_STATUSES)[number],
+    )
+  ) {
+    throw new Error("Nieprawidłowy etap przywracania projektu");
+  }
+
+  const organizationId = await getCurrentOrganizationId();
+  const now = new Date();
+
+  const [deal] = await db
+    .update(pipelineDeals)
+    .set({
+      status,
+      closedAt: null,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(pipelineDeals.id, dealId),
+        eq(pipelineDeals.organizationId, organizationId),
+        inArray(pipelineDeals.status, CLOSED_PIPELINE_DEAL_STATUSES),
+      ),
+    )
+    .returning();
+
+  if (!deal) return null;
+
+  await addSystemNote(
+    deal.clientId,
+    `Przywrócono projekt ${deal.title} do etapu „${PIPELINE_DEAL_STATUS_LABELS[status]}”`,
+    {
+      dealId: deal.id,
+      event: "reactivated",
+      dealTitle: deal.title,
+    },
+  );
+
+  revalidateDashboard();
+  return deal;
 }
 
 export async function closePipelineDeal(

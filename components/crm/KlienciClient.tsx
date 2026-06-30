@@ -7,6 +7,7 @@ import { PipelineBoard } from "@/components/crm/PipelineBoard";
 import { PipelineDealDetail } from "@/components/crm/PipelineDealDetail";
 import { MotionDetailOverlay } from "@/components/ui/motion-detail-overlay";
 import { getActivePipelineDealsWithMeta, type PipelineDealWithMeta } from "@/lib/actions/pipeline-deals";
+import { isActivePipelineDeal } from "@/lib/crm/pipeline-deals";
 import type { CurrentUser } from "@/lib/crm/current-user";
 import { useCrmModals } from "@/components/crm/CrmModalsProvider";
 import { EYEBROW } from "@/lib/ui-patterns";
@@ -42,9 +43,16 @@ export function KlienciClient({
   }
 
   function handleDealUpdated(deal: PipelineDealWithMeta) {
-    setDeals((current) =>
-      current.map((item) => (item.id === deal.id ? deal : item)),
-    );
+    setDeals((current) => {
+      if (!isActivePipelineDeal(deal)) {
+        return current.filter((item) => item.id !== deal.id);
+      }
+      const exists = current.some((item) => item.id === deal.id);
+      if (exists) {
+        return current.map((item) => (item.id === deal.id ? deal : item));
+      }
+      return [deal, ...current];
+    });
     setSelectedDeal(deal);
   }
 
