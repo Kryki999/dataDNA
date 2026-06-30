@@ -1,9 +1,9 @@
 "use server";
 
 import { del, put } from "@vercel/blob";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { clients, notes, pipelineDeals } from "@/lib/db/schema";
+import { clients } from "@/lib/db/schema";
 import {
   avatarExtension,
   isVercelBlobUrl,
@@ -16,7 +16,6 @@ import {
 } from "@/lib/crm/client-name";
 import type { Client } from "@/lib/crm/clients";
 import { isValidCardColor } from "@/lib/crm/clients";
-import { CLOSED_PIPELINE_DEAL_STATUSES } from "@/lib/crm/pipeline-deals";
 import { getCurrentOrganizationId } from "@/lib/tenant";
 import { revalidateDashboard } from "@/lib/revalidate";
 
@@ -71,15 +70,36 @@ export async function searchClients(
   if (!trimmed) return [];
 
   const organizationId = await getCurrentOrganizationId();
-  const rows = await db
+  const pattern = `%${trimmed.replace(/[%_\\]/g, "\\$&")}%`;
+
+  const baseConditions = and(
+    eq(clients.organizationId, organizationId),
+    eq(clients.isArchived, false),
+  );
+
+  const ilikeMatch = or(
+    ilike(clients.name, pattern),
+    ilike(clients.company, pattern),
+    sql`exists (
+      select 1 from unnest(${clients.tags}) as tag
+      where tag ilike ${pattern}
+    )`,
+  );
+
+  let rows = await db
     .select()
     .from(clients)
-    .where(
-      and(
-        eq(clients.organizationId, organizationId),
-        eq(clients.isArchived, false),
-      ),
-    );
+    .where(and(baseConditions, ilikeMatch))
+    .limit(Math.max(limit * 3, 24));
+
+  if (rows.length === 0) {
+    rows = await db
+      .select()
+      .from(clients)
+      .where(baseConditions)
+      .orderBy(desc(clients.updatedAt))
+      .limit(150);
+  }
 
   return rows
     .map((client) => ({
@@ -236,32 +256,6 @@ export async function removeClientCover(clientId: string) {
   return updated ?? null;
 }
 
-async function clientHasHistory(clientId: string, organizationId: string) {
-  const [note] = await db
-    .select({ id: notes.id })
-    .from(notes)
-    .where(
-      and(eq(notes.clientId, clientId), eq(notes.organizationId, organizationId)),
-    )
-    .limit(1);
-
-  if (note) return true;
-
-  const [wonDeal] = await db
-    .select({ id: pipelineDeals.id })
-    .from(pipelineDeals)
-    .where(
-      and(
-        eq(pipelineDeals.clientId, clientId),
-        eq(pipelineDeals.organizationId, organizationId),
-        inArray(pipelineDeals.status, CLOSED_PIPELINE_DEAL_STATUSES),
-      ),
-    )
-    .limit(1);
-
-  return Boolean(wonDeal);
-}
-
 export async function archiveClient(clientId: string) {
   const organizationId = await getCurrentOrganizationId();
   const now = new Date();
@@ -284,13 +278,10 @@ export async function archiveClient(clientId: string) {
 
 export async function deleteClient(clientId: string) {
   const organizationId = await getCurrentOrganizationId();
+  const client = await getClientById(clientId);
+  if (!client) throw new Error("Nie znaleziono klienta");
 
-  const hasHistory = await clientHasHistory(clientId, organizationId);
-  if (hasHistory) {
-    throw new Error(
-      "Nie można trwale usunąć klienta z historią. Użyj archiwizacji.",
-    );
-  }
+  await deleteStoredCover(client.coverUrl);
 
   await db
     .delete(clients)

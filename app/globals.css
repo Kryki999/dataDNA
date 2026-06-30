@@ -221,4 +221,15 @@
   .dna-scrollbar::-webkit-scrollbar-corner {
     background: transparent;
   }
+
+  [data-slot="chart"] .recharts-wrapper,
+  [data-slot="chart"] svg,
+  [data-slot="chart"] .recharts-tooltip-cursor {
+    outline: none !important;
+  }
+
+  [data-slot="chart"] .recharts-tooltip-cursor {
+    fill: transparent !important;
+    stroke: transparent !important;
+  }
 }

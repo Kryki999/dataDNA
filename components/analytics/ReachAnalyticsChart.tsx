@@ -12,10 +12,13 @@ import {
 import type { ReachDay } from "@/lib/types/reach";
 import {
   buildReachChartData,
+  CHANNEL_CHART_COLORS,
   REACH_CHANNEL_LABELS,
   REACH_TIME_RANGE_LABELS,
-  type ReachChannel,
+  REACH_TRAFFIC_LABELS,
+  type ReachChartChannel,
   type ReachTimeRange,
+  type ReachTrafficFilter,
 } from "@/lib/reach-chart";
 import {
   DATA_HERO,
@@ -23,23 +26,33 @@ import {
   FILTER_PILL_ACTIVE,
   FILTER_PILL_INACTIVE,
   FLAT_CONTAINER,
-  SIGNAL_EDGE,
 } from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
 
-const CHANNEL_CHART_COLORS: Record<ReachChannel, string> = {
-  total: "#0055FF",
-  coldCalls: "#0055FF",
-  xImpressions: "#38bdf8",
-  metaClicks: "#a78bfa",
-};
-
-const CHANNEL_GLOW: Record<ReachChannel, string> = {
+const CHANNEL_GLOW: Record<ReachChartChannel, string> = {
   total: "rgba(0, 85, 255, 0.15)",
-  coldCalls: "rgba(0, 85, 255, 0.15)",
-  xImpressions: "rgba(56, 189, 248, 0.15)",
+  cold_calls: "rgba(0, 85, 255, 0.15)",
+  x: "rgba(56, 189, 248, 0.15)",
+  facebook: "rgba(24, 119, 242, 0.15)",
+  instagram: "rgba(225, 48, 108, 0.15)",
+  website: "rgba(52, 211, 153, 0.15)",
   metaClicks: "rgba(167, 139, 250, 0.15)",
 };
+
+const CHART_CHANNELS: ReachChartChannel[] = [
+  "total",
+  "cold_calls",
+  "x",
+  "facebook",
+  "instagram",
+  "website",
+];
+
+const TRAFFIC_CHANNELS = new Set<ReachChartChannel>([
+  "facebook",
+  "instagram",
+  "website",
+]);
 
 type ReachAnalyticsChartProps = {
   series: ReachDay[];
@@ -51,15 +64,16 @@ export function ReachAnalyticsChart({
   allTimeTotal,
 }: ReachAnalyticsChartProps) {
   const [range, setRange] = useState<ReachTimeRange>("7");
-  const [channel, setChannel] = useState<ReachChannel>("total");
+  const [channel, setChannel] = useState<ReachChartChannel>("total");
+  const [traffic, setTraffic] = useState<ReachTrafficFilter>("all");
 
   const chartData = useMemo(
-    () => buildReachChartData(series, range, channel),
-    [series, range, channel],
+    () => buildReachChartData(series, range, channel, traffic),
+    [series, range, channel, traffic],
   );
 
   const strokeColor = CHANNEL_CHART_COLORS[channel];
-  const gradientId = `reach-main-${channel}`;
+  const gradientId = `reach-main-${channel}-${traffic}`;
 
   const chartConfig = {
     value: {
@@ -77,10 +91,12 @@ export function ReachAnalyticsChart({
         ? [chartData[0].label]
         : [];
 
+  const showTrafficToggle = TRAFFIC_CHANNELS.has(channel);
+
   return (
     <section className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className={cn("rounded-xl pl-4", SIGNAL_EDGE)}>
+        <div>
           <p className={EYEBROW}>Zasięgi</p>
           <p className={cn(DATA_HERO, "mt-1")}>
             {allTimeTotal.toLocaleString("pl-PL")}
@@ -111,7 +127,7 @@ export function ReachAnalyticsChart({
       </div>
 
       <div className="flex flex-wrap gap-1.5">
-        {(Object.keys(REACH_CHANNEL_LABELS) as ReachChannel[]).map((key) => (
+        {CHART_CHANNELS.map((key) => (
           <Button
             key={key}
             size="sm"
@@ -135,6 +151,27 @@ export function ReachAnalyticsChart({
         ))}
       </div>
 
+      {showTrafficToggle && (
+        <div className="flex flex-wrap gap-1.5">
+          {(Object.keys(REACH_TRAFFIC_LABELS) as ReachTrafficFilter[]).map(
+            (key) => (
+              <Button
+                key={key}
+                size="sm"
+                variant="ghost"
+                onClick={() => setTraffic(key)}
+                className={cn(
+                  "h-7 border px-2.5 text-xs font-medium",
+                  traffic === key ? FILTER_PILL_ACTIVE : FILTER_PILL_INACTIVE,
+                )}
+              >
+                {REACH_TRAFFIC_LABELS[key]}
+              </Button>
+            ),
+          )}
+        </div>
+      )}
+
       {chartData.length === 0 ? (
         <div
           className={cn(
@@ -142,7 +179,7 @@ export function ReachAnalyticsChart({
             "flex h-[260px] items-center justify-center text-sm text-muted-foreground",
           )}
         >
-          Brak danych — zaloguj pierwszą akcję.
+          Brak danych — zaloguj pierwszą akcję lub połącz API.
         </div>
       ) : (
         <div
@@ -150,7 +187,11 @@ export function ReachAnalyticsChart({
           style={{ boxShadow: `inset 0 0 40px ${CHANNEL_GLOW[channel]}` }}
         >
           <ChartContainer config={chartConfig} className="h-[260px] w-full">
-            <AreaChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <AreaChart
+              data={chartData}
+              margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
+              accessibilityLayer={false}
+            >
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={strokeColor} stopOpacity={0.3} />
@@ -167,9 +208,7 @@ export function ReachAnalyticsChart({
               />
               <ChartTooltip
                 content={
-                  <ChartTooltipContent
-                    className="border-dna-border/40 bg-dna-surface text-foreground"
-                  />
+                  <ChartTooltipContent className="border-dna-border/40 bg-dna-surface text-foreground" />
                 }
               />
               <Area

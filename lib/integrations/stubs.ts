@@ -14,6 +14,5 @@ export const shopifyIntegration = stub("shopify");
 export const mediaDnaIntegration = stub("media-dna");
 export const habitsDragonsIntegration = stub("habits-dragons");
 export const xIntegration = stub("x");
-export const metaIntegration = stub("meta");
 export const youtubeIntegration = stub("youtube");
 export const tiktokIntegration = stub("tiktok");

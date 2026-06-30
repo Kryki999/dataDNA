@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import {
   Dialog,
@@ -25,7 +25,7 @@ export function OmniSearch({
 }: OmniSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ClientSearchResult[]>([]);
-  const [, startTransition] = useTransition();
+  const searchRequestRef = useRef(0);
 
   useEffect(() => {
     if (!open) {
@@ -40,12 +40,14 @@ export function OmniSearch({
       setResults([]);
       return;
     }
+    const requestId = ++searchRequestRef.current;
     const t = setTimeout(() => {
-      startTransition(async () => {
-        const rows = await searchClients(q, 12);
-        setResults(rows);
+      void searchClients(q, 12).then((rows) => {
+        if (searchRequestRef.current === requestId) {
+          setResults(rows);
+        }
       });
-    }, 150);
+    }, 200);
     return () => clearTimeout(t);
   }, [query]);
 
@@ -60,12 +62,9 @@ export function OmniSearch({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Szukaj klientów…"
-              className="border-0 bg-transparent shadow-none focus-visible:ring-0"
+              className="border-0 bg-transparent pr-8 shadow-none focus-visible:ring-0"
               autoFocus
             />
-            <kbd className="hidden rounded border border-dna-border px-1.5 text-[10px] text-muted-foreground sm:inline">
-              Esc
-            </kbd>
           </div>
         </DialogHeader>
         <ul className="max-h-72 overflow-y-auto p-2">

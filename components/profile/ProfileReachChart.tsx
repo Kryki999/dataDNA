@@ -58,7 +58,11 @@ export function ProfileReachChart({ data, totalReach }: ProfileReachChartProps) 
       </p>
       <div className={`p-4 ${FLAT_CONTAINER}`}>
         <ChartContainer config={chartConfig} className="h-40 w-full">
-          <AreaChart data={chartData} margin={MINIMAL_CHART_MARGIN}>
+          <AreaChart
+            data={chartData}
+            margin={MINIMAL_CHART_MARGIN}
+            accessibilityLayer={false}
+          >
             <defs>
               <linearGradient id="profileReachFill" x1="0" y1="0" x2="0" y2="1">
                 <stop

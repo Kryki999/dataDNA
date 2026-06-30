@@ -214,6 +214,8 @@ export function PlannerView({
         open={Boolean(selectedEvent && selectedId)}
         onClose={closeDetail}
         layoutId={selectedId ? `planner-event-${selectedId}` : undefined}
+        embeddedLayout
+        panelClassName="!flex !max-h-[min(88vh,760px)] !flex-col !overflow-hidden p-0"
       >
         {selectedEvent ? (
           <PlannerEventDetail

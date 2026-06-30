@@ -97,6 +97,7 @@ export function RevenueAnalyticsChart({ deals }: RevenueAnalyticsChartProps) {
             <LineChart
               data={chartData}
               margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
+              accessibilityLayer={false}
             >
               <XAxis
                 dataKey="label"

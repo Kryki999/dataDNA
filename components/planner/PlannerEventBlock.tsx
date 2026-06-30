@@ -11,6 +11,7 @@ import {
   getEventHeightPx,
   getEventTopPx,
   plannerTaskColor,
+  plannerTaskCoverUrl,
   plannerTaskSubtitle,
 } from "@/components/planner/planner-utils";
 import { useEventResize } from "@/components/planner/hooks/useEventResize";
@@ -50,10 +51,12 @@ function PlannerEventBlockVisual({
   return (
     <EntityCard
       variant="task"
+      density="compact"
       layoutId={
         layoutId && !isSelected ? `planner-event-${event.id}` : undefined
       }
       title={event.title}
+      coverUrl={plannerTaskCoverUrl(event)}
       cardColor={plannerTaskColor(event)}
       subtitle={plannerTaskSubtitle(event)}
       meta={dueAt ? formatEventTime(dueAt) : null}

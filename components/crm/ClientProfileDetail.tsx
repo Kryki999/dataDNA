@@ -9,6 +9,14 @@ import { ClientCardColorControl } from "@/components/cards/ClientCardColorContro
 import { ClientTimelineFeed } from "@/components/crm/ClientTimelineFeed";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -56,6 +64,7 @@ export function ClientProfileDetail({
   const [cardColor, setCardColor] = useState<ClientCardColor>(
     isValidCardColor(initial.cardColor) ? initial.cardColor : "slate",
   );
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isPending, startTransition] = useTransition();
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -144,10 +153,11 @@ export function ClientProfileDetail({
       try {
         await deleteClient(client.id);
         toast.success("Usunięto klienta");
+        setShowDeleteDialog(false);
         onArchived(client.id);
       } catch (e) {
         toast.error(
-          e instanceof Error ? e.message : "Nie można usunąć — użyj archiwizacji",
+          e instanceof Error ? e.message : "Nie udało się usunąć klienta",
         );
       }
     });
@@ -237,7 +247,7 @@ export function ClientProfileDetail({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
-                    onClick={handleDelete}
+                    onClick={() => setShowDeleteDialog(true)}
                   >
                     Usuń
                   </DropdownMenuItem>
@@ -322,6 +332,40 @@ export function ClientProfileDetail({
           Zapisz dane kontaktowe
         </Button>
       </div>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="border-dna-border/40 bg-dna-surface sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Usunąć klienta na stałe?</DialogTitle>
+            <DialogDescription>
+              Ta operacja jest nieodwracalna. Z bazy zostaną usunięte wszystkie
+              dane powiązane z klientem{" "}
+              <span className="font-medium text-foreground">
+                {getClientDisplayName(client)}
+              </span>
+              , w tym notatki, projekty w kanbanie i historia współpracy.
+              Wpisy przychodów i zadania w planerze pozostaną, ale bez powiązania
+              z tym klientem.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="border-0 bg-transparent p-0 sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isPending}
+            >
+              Anuluj
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isPending}
+            >
+              Usuń wszystkie dane
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

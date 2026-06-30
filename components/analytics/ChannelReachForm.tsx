@@ -31,9 +31,9 @@ export function ChannelReachForm({ channel, onSuccess }: ChannelReachFormProps) 
     }
 
     const payload = {
-      coldCalls: channel.id === "coldCalls" ? numValue : 0,
-      xImpressions: channel.id === "xImpressions" ? numValue : 0,
-      metaClicks: channel.id === "metaClicks" ? numValue : 0,
+      coldCalls: channel.id === "cold_calls" ? numValue : 0,
+      xImpressions: channel.id === "x" ? numValue : 0,
+      metaClicks: 0,
     };
 
     startTransition(async () => {
@@ -50,6 +50,8 @@ export function ChannelReachForm({ channel, onSuccess }: ChannelReachFormProps) 
       }
     });
   }
+
+  if (!channel.inputLabel) return null;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

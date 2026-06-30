@@ -7,6 +7,8 @@ import { PlannerIconBadge } from "@/components/planner/PlannerIconBadge";
 import {
   formatEventTime,
   plannerTaskColor,
+  plannerTaskCoverUrl,
+  plannerTaskDescription,
   plannerTaskSubtitle,
 } from "@/components/planner/planner-utils";
 import type { PlannerEventWithMeta } from "@/lib/planner/types";
@@ -50,10 +52,13 @@ function PlannerBacklogCardVisual({
   const card = (
     <EntityCard
       variant="task"
+      density="comfortable"
       layoutId={
         layoutId && !isDragging ? `planner-event-${event.id}` : undefined
       }
       title={event.title}
+      coverUrl={plannerTaskCoverUrl(event)}
+      description={plannerTaskDescription(event)}
       cardColor={plannerTaskColor(event)}
       subtitle={plannerTaskSubtitle(event)}
       meta={meta}

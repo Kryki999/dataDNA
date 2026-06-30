@@ -5,6 +5,7 @@ export * from "./clients";
 export * from "./pipeline-deals";
 export * from "./notes";
 export * from "./activities";
+export * from "./reach-daily-metrics";
 export * from "./revenue-records";
 export * from "./integrations";
 export * from "./webhooks";
@@ -21,6 +22,7 @@ import { clients } from "./clients";
 import { pipelineDeals } from "./pipeline-deals";
 import { notes } from "./notes";
 import { activityLogs, reachMetrics } from "./activities";
+import { reachDailyMetrics } from "./reach-daily-metrics";
 import { revenueRecords } from "./revenue-records";
 import { integrations } from "./integrations";
 import { webhookEvents } from "./webhooks";
@@ -38,6 +40,7 @@ export const schema = {
   notes,
   activityLogs,
   reachMetrics,
+  reachDailyMetrics,
   revenueRecords,
   integrations,
   webhookEvents,

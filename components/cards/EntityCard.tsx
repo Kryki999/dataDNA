@@ -4,9 +4,9 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getCardColorClasses, type CardColorKey } from "@/lib/design-tokens";
+import { getCardColorClasses } from "@/lib/design-tokens";
 import { getTagColorClass } from "@/lib/crm/tags";
-import { CARD_TITLE, SURFACE_CARD, SIGNAL_EDGE_HOVER } from "@/lib/ui-patterns";
+import { CARD_TITLE, SURFACE_CARD } from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
 
 export type EntityCardAvatar = {
@@ -16,15 +16,19 @@ export type EntityCardAvatar = {
 
 export type EntityCardVariant = "tile" | "task";
 
+export type EntityCardDensity = "comfortable" | "compact";
+
 export type EntityCardProps = {
   layoutId?: string;
   variant?: EntityCardVariant;
+  density?: EntityCardDensity;
   title: string;
   coverUrl?: string | null;
   cardColor?: string | null;
   tags?: string[];
   avatars?: EntityCardAvatar[];
   subtitle?: string | null;
+  description?: string | null;
   meta?: string | null;
   leading?: ReactNode;
   selected?: boolean;
@@ -37,12 +41,14 @@ export type EntityCardProps = {
 export function EntityCard({
   layoutId,
   variant = "tile",
+  density = "comfortable",
   title,
   coverUrl,
   cardColor,
   tags = [],
   avatars = [],
   subtitle,
+  description,
   meta,
   leading,
   selected = false,
@@ -58,7 +64,11 @@ export function EntityCard({
       <div
         className={cn(
           "invisible rounded-xl",
-          variant === "task" ? "h-[72px]" : "min-h-[140px]",
+          variant === "task"
+            ? density === "compact"
+              ? "h-[72px]"
+              : "min-h-[200px]"
+            : "min-h-[140px]",
         )}
         aria-hidden
       />
@@ -67,37 +77,47 @@ export function EntityCard({
 
   const interactive = Boolean(onClick);
 
-  const taskCard = (
+  const interactiveProps = {
+    onClick,
+    onKeyDown: interactive
+      ? (e: React.KeyboardEvent) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick?.();
+          }
+        }
+      : undefined,
+    role: interactive ? ("button" as const) : undefined,
+    tabIndex: interactive ? 0 : undefined,
+  };
+
+  const taskCardCompact = (
     <div
       className={cn(
-        "group relative flex min-h-[72px] overflow-hidden rounded-xl text-left transition-all",
+        "group relative flex h-full min-h-[56px] overflow-hidden rounded-xl text-left transition-all",
         SURFACE_CARD,
-        colors.border,
-        colors.accentBorder,
-        "border-l-[5px]",
-        interactive && "cursor-pointer hover:brightness-110",
+        interactive && "cursor-pointer hover:bg-dna-raised/40",
         completed && "opacity-55",
         className,
       )}
-      onClick={onClick}
-      onKeyDown={
-        interactive
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onClick?.();
-              }
-            }
-          : undefined
-      }
-      role={interactive ? "button" : undefined}
-      tabIndex={interactive ? 0 : undefined}
+      {...interactiveProps}
     >
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-3 py-2.5">
-        <div className="flex items-center gap-2">
+      {coverUrl ? (
+        <div className="relative w-12 shrink-0 self-stretch sm:w-14">
+          <Image
+            src={coverUrl}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="56px"
+          />
+        </div>
+      ) : null}
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-2.5 py-2">
+        <div className="flex items-center gap-1.5">
           {leading}
           {meta ? (
-            <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+            <span className="text-[10px] font-medium tabular-nums text-muted-foreground">
               {meta}
             </span>
           ) : null}
@@ -105,14 +125,14 @@ export function EntityCard({
         <p
           className={cn(
             CARD_TITLE,
-            "line-clamp-2 leading-snug",
+            "line-clamp-2 text-[13px] leading-snug",
             completed && "line-through text-muted-foreground",
           )}
         >
           {title}
         </p>
         {subtitle ? (
-          <p className="truncate text-[10px] font-medium text-primary/90">
+          <p className="truncate text-[10px] font-medium text-primary/80">
             {subtitle}
           </p>
         ) : null}
@@ -121,31 +141,86 @@ export function EntityCard({
     </div>
   );
 
+  const taskCardComfortable = (
+    <div
+      className={cn(
+        "group relative flex flex-col overflow-hidden rounded-xl text-left transition-all",
+        SURFACE_CARD,
+        interactive && "cursor-pointer hover:bg-dna-raised/30",
+        completed && "opacity-55",
+        className,
+      )}
+      {...interactiveProps}
+    >
+      <div
+        className={cn(
+          "relative aspect-[4/3] w-full bg-gradient-to-br",
+          colors.bg,
+        )}
+      >
+        {coverUrl ? (
+          <Image
+            src={coverUrl}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 50vw, 240px"
+          />
+        ) : null}
+        <div className="absolute inset-x-0 top-0 flex items-start justify-between p-2">
+          <div className="flex items-center gap-1.5">
+            {leading ? (
+              <span className="rounded-md bg-dna-surface/80 p-1 backdrop-blur-sm">
+                {leading}
+              </span>
+            ) : null}
+          </div>
+          {meta ? (
+            <span className="rounded-md bg-dna-surface/80 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground backdrop-blur-sm">
+              {meta}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1 p-3">
+        <p
+          className={cn(
+            CARD_TITLE,
+            "line-clamp-2",
+            completed && "line-through text-muted-foreground",
+          )}
+        >
+          {title}
+        </p>
+        {description ? (
+          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        ) : null}
+        {subtitle ? (
+          <p className="truncate text-[11px] font-medium text-primary/80">
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
+
+      {children}
+    </div>
+  );
+
+  const taskCard =
+    density === "compact" ? taskCardCompact : taskCardComfortable;
+
   const tileCard = (
     <div
       className={cn(
         "group relative flex flex-col overflow-hidden rounded-xl text-left transition-all",
         SURFACE_CARD,
-        SIGNAL_EDGE_HOVER,
-        colors.border,
-        colors.accentBorder,
-        "border-l-[5px]",
-        interactive && "cursor-pointer hover:brightness-110",
+        interactive && "cursor-pointer hover:bg-dna-raised/30",
         className,
       )}
-      onClick={onClick}
-      onKeyDown={
-        interactive
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onClick?.();
-              }
-            }
-          : undefined
-      }
-      role={interactive ? "button" : undefined}
-      tabIndex={interactive ? 0 : undefined}
+      {...interactiveProps}
     >
       <div
         className={cn(
@@ -161,15 +236,7 @@ export function EntityCard({
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 320px"
           />
-        ) : (
-          <div
-            className={cn(
-              "absolute inset-0 bg-gradient-to-br opacity-90",
-              colors.bg,
-            )}
-            aria-hidden
-          />
-        )}
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col p-3">

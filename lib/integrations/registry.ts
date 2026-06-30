@@ -1,11 +1,12 @@
 import type { IntegrationModule, IntegrationProviderId } from "./types";
 import { stripeIntegration } from "./stripe";
+import { metaIntegration } from "./meta";
+import { vercelAnalyticsIntegration } from "./vercel-analytics";
 import {
   shopifyIntegration,
   mediaDnaIntegration,
   habitsDragonsIntegration,
   xIntegration,
-  metaIntegration,
   youtubeIntegration,
   tiktokIntegration,
 } from "./stubs";
@@ -17,6 +18,7 @@ const modules: IntegrationModule[] = [
   habitsDragonsIntegration,
   xIntegration,
   metaIntegration,
+  vercelAnalyticsIntegration,
   youtubeIntegration,
   tiktokIntegration,
 ];

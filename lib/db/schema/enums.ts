@@ -82,3 +82,25 @@ export const plannerEventIconEnum = pgEnum("planner_event_icon", [
   "design",
   "meeting",
 ]);
+
+export const reachChannelEnum = pgEnum("reach_channel", [
+  "cold_calls",
+  "x",
+  "facebook",
+  "instagram",
+  "website",
+]);
+
+export const reachTrafficTypeEnum = pgEnum("reach_traffic_type", [
+  "manual",
+  "paid",
+  "organic",
+]);
+
+export const reachMetricEnum = pgEnum("reach_metric", [
+  "clicks",
+  "impressions",
+  "reach",
+  "pageviews",
+  "visitors",
+]);

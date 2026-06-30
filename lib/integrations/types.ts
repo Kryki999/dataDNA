@@ -6,7 +6,8 @@ export type IntegrationProviderId =
   | "x"
   | "meta"
   | "youtube"
-  | "tiktok";
+  | "tiktok"
+  | "vercel-analytics";
 
 export type SyncResult = {
   provider: IntegrationProviderId;
@@ -33,4 +34,16 @@ export type MetricPayload = {
   xImpressions?: number;
   metaClicks?: number;
   revenuePln?: number;
+};
+
+export type MetaCredentials = {
+  accessToken: string;
+  adAccountId: string;
+  pageId?: string;
+  igUserId?: string;
+};
+
+export type VercelAnalyticsCredentials = {
+  drainSecret: string;
+  webhookOrgSlug?: string;
 };

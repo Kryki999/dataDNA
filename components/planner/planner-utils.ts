@@ -131,6 +131,21 @@ export function plannerTaskSubtitle(event: PlannerEventWithMeta) {
   return clientLabel(event);
 }
 
+export function plannerTaskCoverUrl(event: PlannerEventWithMeta): string | null {
+  const image = event.attachments.find((a) =>
+    a.mimeType.startsWith("image/"),
+  );
+  return image?.url ?? null;
+}
+
+export function plannerTaskDescription(
+  event: PlannerEventWithMeta,
+): string | null {
+  const text = event.description?.trim();
+  if (!text) return null;
+  return text.length > 120 ? `${text.slice(0, 117)}…` : text;
+}
+
 /** @deprecated Use clientLabel */
 export function leadLabel(event: PlannerEventWithMeta) {
   return clientLabel(event);

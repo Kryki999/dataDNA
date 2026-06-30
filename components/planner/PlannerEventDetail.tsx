@@ -1,9 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import Image from "next/image";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
-import { ChevronDown, FileText, Link2, Trash2, Upload, X } from "lucide-react";
+import {
+  ChevronDown,
+  ImageIcon,
+  Link2,
+  MoreHorizontal,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   deletePlannerAttachment,
@@ -15,11 +24,24 @@ import type {
   PlannerClientOption,
 } from "@/lib/planner/types";
 import { PLANNER_ICONS } from "@/lib/planner/types";
-import { renderSimpleMarkdown } from "@/lib/planner/markdown";
 import { ClientCardColorControl } from "@/components/cards/ClientCardColorControl";
 import { PlannerIconBadge } from "@/components/planner/PlannerIconBadge";
-import { clientLabel } from "@/components/planner/planner-utils";
+import {
+  clientLabel,
+  plannerTaskColor,
+  plannerTaskCoverUrl,
+} from "@/components/planner/planner-utils";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -29,7 +51,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { EYEBROW, INPUT_SURFACE, SURFACE_WELL } from "@/lib/ui-patterns";
+import { getCardColorClasses } from "@/lib/design-tokens";
+import {
+  DNA_SCROLLBAR,
+  EYEBROW,
+  INPUT_SURFACE,
+  MODAL_TITLE,
+  SURFACE_WELL,
+} from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
 
 type PlannerEventDetailProps = {
@@ -44,7 +73,10 @@ type PlannerEventDetailProps = {
   onComplete: (id: string) => void;
   onDelete: (id: string) => void;
   onClose: () => void;
-  onAttachmentsChange: (id: string, attachments: PlannerEventWithMeta["attachments"]) => void;
+  onAttachmentsChange: (
+    id: string,
+    attachments: PlannerEventWithMeta["attachments"],
+  ) => void;
   onClientColorUpdated?: (eventId: string, cardColor: string | null) => void;
 };
 
@@ -68,20 +100,17 @@ export function PlannerEventDetail({
 }: PlannerEventDetailProps) {
   const [title, setTitle] = useState(event.title);
   const [description, setDescription] = useState(event.description);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [showCrmLink, setShowCrmLink] = useState(Boolean(event.clientId));
-  const [showPreview, setShowPreview] = useState(false);
   const [editingTime, setEditingTime] = useState(false);
   const [, startUpload] = useTransition();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setTitle(event.title);
     setDescription(event.description);
     setShowCrmLink(Boolean(event.clientId));
     setEditingTime(false);
-    setShowPreview(false);
   }, [event.id, event.title, event.description, event.clientId]);
 
   const debouncedPatch = useCallback(
@@ -91,6 +120,9 @@ export function PlannerEventDetail({
     },
     [event.id, onPatch],
   );
+
+  const coverUrl = plannerTaskCoverUrl(event);
+  const colors = getCardColorClasses(plannerTaskColor(event));
 
   const dueLocal = event.dueAt
     ? format(new Date(event.dueAt), "yyyy-MM-dd'T'HH:mm")
@@ -120,9 +152,13 @@ export function PlannerEventDetail({
     onPatch(event.id, { endsAt: new Date(value) });
   }
 
-  function handleFileSelect(files: FileList | null) {
+  function handleCoverSelect(files: FileList | null) {
     if (!files?.length) return;
     const file = files[0]!;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Okładka musi być zdjęciem");
+      return;
+    }
     const formData = new FormData();
     formData.set("file", file);
 
@@ -130,132 +166,218 @@ export function PlannerEventDetail({
       try {
         const attachment = await uploadPlannerAttachment(event.id, formData);
         onAttachmentsChange(event.id, [...event.attachments, attachment]);
-        toast.success("Załącznik dodany");
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Nie udało się dodać pliku",
+          error instanceof Error ? error.message : "Nie udało się dodać zdjęcia",
         );
       }
     });
   }
 
-  function handleRemoveAttachment(attachmentId: string) {
+  function handleRemoveCover() {
+    const image = event.attachments.find((a) =>
+      a.mimeType.startsWith("image/"),
+    );
+    if (!image) return;
     startUpload(async () => {
       try {
-        await deletePlannerAttachment(attachmentId);
+        await deletePlannerAttachment(image.id);
         onAttachmentsChange(
           event.id,
-          event.attachments.filter((a) => a.id !== attachmentId),
+          event.attachments.filter((a) => a.id !== image.id),
         );
       } catch {
-        toast.error("Nie udało się usunąć załącznika");
+        toast.error("Nie udało się usunąć zdjęcia");
       }
     });
   }
 
   return (
-    <div>
-      <div className="space-y-4 border-b border-dna-border p-5">
-        <div className="flex items-start justify-between gap-2">
-          <p className={EYEBROW}>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-dna-border px-4 py-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <PlannerIconBadge icon={event.icon} className="size-5 shrink-0" />
+          <p className={cn(EYEBROW, "truncate")}>
             {event.dueAt ? "Zaplanowane" : "Backlog"}
           </p>
-          <div className="flex shrink-0 items-center gap-0.5">
-            {event.clientId ? (
-              <ClientCardColorControl
-                clientId={event.clientId}
-                value={event.clientCardColor}
-                onUpdated={(client) => {
-                  onClientColorUpdated?.(event.id, client.cardColor);
-                }}
-                size="sm"
-              />
-            ) : null}
-            <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={onClose}>
-              <X className="size-4" />
-            </Button>
-          </div>
         </div>
-
-        <Input
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            debouncedPatch({ title: e.target.value });
-          }}
-          className="border-transparent bg-transparent px-0 text-lg font-semibold text-foreground focus-visible:border-dna-border"
-        />
-
-        {event.dueAt ? (
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => setEditingTime((v) => !v)}
-              className={cn(SURFACE_WELL, "flex w-full items-center justify-between px-3 py-2 text-left text-sm")}
+        <div className="flex shrink-0 items-center gap-0.5">
+          {event.clientId ? (
+            <ClientCardColorControl
+              clientId={event.clientId}
+              value={event.clientCardColor}
+              onUpdated={(client) => {
+                onClientColorUpdated?.(event.id, client.cardColor);
+              }}
+              size="sm"
+            />
+          ) : null}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="ghost" size="icon" className="size-8" />
+              }
             >
-              <span className="tabular-nums text-foreground">{timeLabel}</span>
-              <ChevronDown
-                className={cn(
-                  "size-4 text-muted-foreground transition-transform",
-                  editingTime && "rotate-180",
-                )}
-              />
-            </button>
-            {editingTime ? (
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Input
-                  type="datetime-local"
-                  value={dueLocal}
-                  onChange={(e) => handleDueChange(e.target.value)}
-                  className={INPUT_SURFACE}
-                />
-                <Input
-                  type="datetime-local"
-                  value={endLocal}
-                  onChange={(e) => handleEndChange(e.target.value)}
-                  className={INPUT_SURFACE}
-                  disabled={!event.dueAt}
-                />
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        <div className="space-y-2">
-          <p className={EYEBROW}>Typ</p>
-          <div className="flex flex-wrap gap-1.5">
-            {PLANNER_ICONS.map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => onPatch(event.id, { icon: key })}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-medium transition-colors",
-                  event.icon === key
-                    ? "border-primary/50 bg-primary/10 text-primary"
-                    : "border-dna-border/40 bg-dna-inset text-muted-foreground hover:text-foreground",
-                )}
+              <MoreHorizontal className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Typ zadania</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {PLANNER_ICONS.map((key) => (
+                    <DropdownMenuItem
+                      key={key}
+                      onClick={() => onPatch(event.id, { icon: key })}
+                    >
+                      <PlannerIconBadge icon={key} className="size-4" />
+                      {ICON_LABELS[key]}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuItem onClick={() => setShowCrmLink(true)}>
+                <Link2 className="size-3.5" />
+                Powiąż z klientem
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => {
+                  onDelete(event.id);
+                  onClose();
+                }}
               >
-                <PlannerIconBadge icon={key} className="size-4" />
-                {ICON_LABELS[key]}
-              </button>
-            ))}
-          </div>
+                Usuń zadanie
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            onClick={onClose}
+          >
+            <X className="size-4" />
+          </Button>
         </div>
+      </div>
 
-        <div className="space-y-2">
-          {!showCrmLink ? (
+      <div
+        className={cn(
+          "min-h-0 flex-1 overflow-y-auto overflow-x-hidden",
+          DNA_SCROLLBAR,
+        )}
+      >
+        <div
+          className={cn(
+            "relative h-32 w-full shrink-0 bg-gradient-to-br sm:h-36",
+            colors.bg,
+          )}
+        >
+          {coverUrl ? (
+            <Image
+              src={coverUrl}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="512px"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-muted-foreground/30">
+              <ImageIcon className="size-8" />
+            </div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 flex gap-2 bg-gradient-to-t from-dna-canvas/85 to-transparent px-4 pb-3 pt-8">
             <Button
               type="button"
-              variant="outline"
               size="sm"
-              className="border-dna-border/40"
-              onClick={() => setShowCrmLink(true)}
+              variant="secondary"
+              className="h-7 gap-1.5 bg-dna-surface/90 text-xs"
+              onClick={() => coverInputRef.current?.click()}
             >
-              <Link2 className="size-3.5" />
-              Powiąż z klientem
+              <Upload className="size-3.5" />
+              Zdjęcie
             </Button>
-          ) : (
+            {coverUrl ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs text-muted-foreground"
+                onClick={handleRemoveCover}
+              >
+                <Trash2 className="size-3.5" />
+                Usuń
+              </Button>
+            ) : null}
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => handleCoverSelect(e.target.files)}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4 p-5">
+          <Input
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              debouncedPatch({ title: e.target.value });
+            }}
+            className={cn(
+              MODAL_TITLE,
+              "h-auto border-transparent bg-transparent px-0 focus-visible:border-dna-border",
+            )}
+          />
+
+          {clientLabel(event) ? (
+            <p className="text-xs font-medium text-primary/90">
+              {clientLabel(event)}
+            </p>
+          ) : null}
+
+          {event.dueAt ? (
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setEditingTime((v) => !v)}
+                className={cn(
+                  SURFACE_WELL,
+                  "flex w-full items-center justify-between px-3 py-2.5 text-left text-sm",
+                )}
+              >
+                <span className="tabular-nums text-foreground">{timeLabel}</span>
+                <ChevronDown
+                  className={cn(
+                    "size-4 shrink-0 text-muted-foreground transition-transform",
+                    editingTime && "rotate-180",
+                  )}
+                />
+              </button>
+              {editingTime ? (
+                <div className="grid gap-2">
+                  <Input
+                    type="datetime-local"
+                    value={dueLocal}
+                    onChange={(e) => handleDueChange(e.target.value)}
+                    className={INPUT_SURFACE}
+                  />
+                  <Input
+                    type="datetime-local"
+                    value={endLocal}
+                    onChange={(e) => handleEndChange(e.target.value)}
+                    className={INPUT_SURFACE}
+                    disabled={!event.dueAt}
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {showCrmLink ? (
             <Select
               value={event.clientId ?? "none"}
               onValueChange={(value) =>
@@ -276,143 +398,35 @@ export function PlannerEventDetail({
                 ))}
               </SelectContent>
             </Select>
-          )}
-          {clientLabel(event) ? (
-            <p className="text-xs text-primary/90">{clientLabel(event)}</p>
           ) : null}
-          {!event.clientId && showCrmLink ? (
-            <p className="text-xs text-muted-foreground">
-              Powiąż zadanie z klientem, aby ustawić kolor karty.
-            </p>
-          ) : null}
-        </div>
-      </div>
 
-      <div className="space-y-5 p-5">
-        <div className="space-y-2">
-          <p className={EYEBROW}>Opis</p>
           <Textarea
             value={description}
             onChange={(e) => {
               setDescription(e.target.value);
               debouncedPatch({ description: e.target.value });
             }}
-            rows={4}
-            className={INPUT_SURFACE}
-            placeholder="Notatki, **pogrubienie**, *kursywa*"
+            rows={8}
+            className={cn(
+              INPUT_SURFACE,
+              "min-h-[min(40vh,280px)] resize-y",
+            )}
+            placeholder="Opis zadania…"
           />
-          {description ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs text-muted-foreground"
-              onClick={() => setShowPreview((v) => !v)}
-            >
-              {showPreview ? "Ukryj podgląd" : "Podgląd"}
-            </Button>
-          ) : null}
-          {showPreview && description ? (
-            <div
-              className={cn(SURFACE_WELL, "p-3 text-sm text-foreground")}
-              dangerouslySetInnerHTML={{
-                __html: renderSimpleMarkdown(description),
-              }}
-            />
-          ) : null}
-        </div>
-
-        <div className="space-y-2">
-          <p className={EYEBROW}>Załączniki</p>
-          <div
-            className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-dna-border/40 bg-dna-inset px-4 py-6 transition-colors hover:border-primary/40 hover:bg-primary/5"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              handleFileSelect(e.dataTransfer.files);
-            }}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="size-5 text-muted-foreground" />
-            <p className="mt-2 text-xs text-muted-foreground">
-              Przeciągnij pliki lub kliknij
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              accept="image/*,application/pdf"
-              onChange={(e) => handleFileSelect(e.target.files)}
-            />
-          </div>
-          {event.attachments.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2">
-              {event.attachments.map((attachment) => (
-                <div
-                  key={attachment.id}
-                  className="group relative overflow-hidden rounded-lg bg-dna-inset"
-                >
-                  {attachment.mimeType.startsWith("image/") ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={attachment.url}
-                      alt={attachment.fileName}
-                      className="aspect-square w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex aspect-square flex-col items-center justify-center gap-2 p-2 text-muted-foreground">
-                      <FileText className="size-8" />
-                      <span className="line-clamp-2 text-center text-[10px]">
-                        {attachment.fileName}
-                      </span>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveAttachment(attachment.id)}
-                    className="absolute right-1 top-1 rounded bg-dna-surface p-1 text-rose-400 opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <Trash2 className="size-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : null}
         </div>
       </div>
 
-      <div className="flex gap-3 border-t border-dna-border p-5">
+      <div className="shrink-0 border-t border-dna-border p-4">
         <Button
-          className="h-12 flex-1"
+          className="h-11 w-full"
           onClick={() => {
             onComplete(event.id);
             onClose();
           }}
           disabled={event.status === "completed"}
         >
-          Oznacz jako zrobione
+          {event.status === "completed" ? "Zrobione" : "Oznacz jako zrobione"}
         </Button>
-        {!confirmDelete ? (
-          <Button
-            variant="outline"
-            className="h-12 w-12 shrink-0 border-rose-500/40 text-rose-400 hover:bg-rose-500/10"
-            onClick={() => setConfirmDelete(true)}
-            aria-label="Usuń zadanie"
-          >
-            <Trash2 className="size-4" />
-          </Button>
-        ) : (
-          <Button
-            variant="destructive"
-            className="h-12 shrink-0"
-            onClick={() => {
-              onDelete(event.id);
-              onClose();
-            }}
-          >
-            Usuń
-          </Button>
-        )}
       </div>
     </div>
   );

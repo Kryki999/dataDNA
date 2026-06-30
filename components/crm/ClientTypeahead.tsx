@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,8 +34,9 @@ export function ClientTypeahead({
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<ClientSearchResult[]>([]);
   const [pickRequired, setPickRequired] = useState<ClientSearchResult[]>([]);
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchRequestRef = useRef(0);
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus();
@@ -47,20 +48,23 @@ export function ClientTypeahead({
       setMatches([]);
       return;
     }
+    const requestId = ++searchRequestRef.current;
     const t = setTimeout(() => {
-      startTransition(async () => {
-        const results = await searchClients(trimmed);
-        setMatches(results);
+      void searchClients(trimmed).then((results) => {
+        if (searchRequestRef.current === requestId) {
+          setMatches(results);
+        }
       });
-    }, 200);
+    }, 250);
     return () => clearTimeout(t);
   }, [query]);
 
-  function submit(clientId?: string) {
+  async function submit(clientId?: string) {
     const name = query.trim();
-    if (!name) return;
+    if (!name || isSubmitting) return;
 
-    startTransition(async () => {
+    setIsSubmitting(true);
+    try {
       const result = await silentCreatePipelineDeal({
         name,
         clientId,
@@ -80,7 +84,9 @@ export function ClientTypeahead({
       setPickRequired([]);
       onCreated(result);
       toast.success("Dodano na tablicę");
-    });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const showList = matches.length > 0 || pickRequired.length > 0;
@@ -106,7 +112,7 @@ export function ClientTypeahead({
           }
         }}
         placeholder={placeholder}
-        disabled={isPending}
+        disabled={isSubmitting}
         className="border-dna-border/50 bg-dna-inset"
       />
 

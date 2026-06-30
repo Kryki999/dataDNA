@@ -57,7 +57,11 @@ export function ProfileClientsChart({
       </p>
       <div className={`p-4 ${FLAT_CONTAINER}`}>
         <ChartContainer config={chartConfig} className="h-40 w-full">
-          <BarChart data={chartData} margin={MINIMAL_CHART_MARGIN}>
+          <BarChart
+            data={chartData}
+            margin={MINIMAL_CHART_MARGIN}
+            accessibilityLayer={false}
+          >
             <XAxis
               dataKey="label"
               axisLine={false}

@@ -126,3 +126,86 @@ export async function addSystemNote(
   revalidateDashboard();
   return note;
 }
+
+export async function updateClientNote(noteId: string, body: string) {
+  const organizationId = await getCurrentOrganizationId();
+  const trimmed = body.trim();
+  if (!trimmed) throw new Error("Notatka nie może być pusta");
+
+  const [existing] = await db
+    .select({
+      id: notes.id,
+      clientId: notes.clientId,
+      type: notes.type,
+    })
+    .from(notes)
+    .where(
+      and(eq(notes.id, noteId), eq(notes.organizationId, organizationId)),
+    )
+    .limit(1);
+
+  if (!existing) throw new Error("Nie znaleziono notatki");
+  if (existing.type !== "user") {
+    throw new Error("Nie można edytować wpisów systemowych");
+  }
+
+  const [note] = await db
+    .update(notes)
+    .set({ body: trimmed })
+    .where(
+      and(eq(notes.id, noteId), eq(notes.organizationId, organizationId)),
+    )
+    .returning();
+
+  await db
+    .update(clients)
+    .set({ updatedAt: new Date() })
+    .where(
+      and(
+        eq(clients.id, existing.clientId),
+        eq(clients.organizationId, organizationId),
+      ),
+    );
+
+  revalidateDashboard();
+  return note ?? null;
+}
+
+export async function deleteClientNote(noteId: string) {
+  const organizationId = await getCurrentOrganizationId();
+
+  const [existing] = await db
+    .select({
+      id: notes.id,
+      clientId: notes.clientId,
+      type: notes.type,
+    })
+    .from(notes)
+    .where(
+      and(eq(notes.id, noteId), eq(notes.organizationId, organizationId)),
+    )
+    .limit(1);
+
+  if (!existing) throw new Error("Nie znaleziono notatki");
+  if (existing.type !== "user") {
+    throw new Error("Nie można usunąć wpisów systemowych");
+  }
+
+  await db
+    .delete(notes)
+    .where(
+      and(eq(notes.id, noteId), eq(notes.organizationId, organizationId)),
+    );
+
+  await db
+    .update(clients)
+    .set({ updatedAt: new Date() })
+    .where(
+      and(
+        eq(clients.id, existing.clientId),
+        eq(clients.organizationId, organizationId),
+      ),
+    );
+
+  revalidateDashboard();
+}
