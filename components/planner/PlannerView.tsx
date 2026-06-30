@@ -15,12 +15,11 @@ import { LayoutGroup } from "framer-motion";
 import { Inbox } from "lucide-react";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { MotionDetailOverlay } from "@/components/ui/motion-detail-overlay";
-import { SURFACE_CARD } from "@/lib/ui-patterns";
 import { PlannerBacklogBoard } from "@/components/planner/PlannerBacklogBoard";
 import { PlannerBacklogDrawer } from "@/components/planner/PlannerBacklogDrawer";
 import { PlannerDayAgenda } from "@/components/planner/PlannerDayAgenda";
 import { PlannerEventDetail } from "@/components/planner/PlannerEventDetail";
-import { PlannerIconBadge } from "@/components/planner/PlannerIconBadge";
+import { PlannerDragPreview } from "@/components/planner/PlannerDragPreview";
 import { PlannerQuickAdd } from "@/components/planner/PlannerQuickAdd";
 import { PlannerScheduleAdd } from "@/components/planner/PlannerScheduleAdd";
 import { PlannerSlotPicker } from "@/components/planner/PlannerSlotPicker";
@@ -281,16 +280,9 @@ export function PlannerView({
         >
           {plannerBoard}
 
-          <DragOverlay>
+          <DragOverlay dropAnimation={null}>
             {activeDragEvent ? (
-              <div className={cn("w-52 rounded-lg p-3", SURFACE_CARD, "border border-dna-signal/40")}>
-                <div className="flex items-center gap-2">
-                  <PlannerIconBadge icon={activeDragEvent.icon} />
-                  <span className="truncate text-xs font-semibold text-foreground">
-                    {activeDragEvent.title}
-                  </span>
-                </div>
-              </div>
+              <PlannerDragPreview event={activeDragEvent} />
             ) : null}
           </DragOverlay>
         </DndContext>

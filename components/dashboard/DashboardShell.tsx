@@ -30,9 +30,9 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
           }
         >
           <AppSidebar variant="inset" user={user} />
-          <SidebarInset className={cn(SURFACE_CANVAS, "min-h-0 shadow-none")}>
+          <SidebarInset className={cn(SURFACE_CANVAS, "min-h-0 min-w-0 overflow-x-hidden shadow-none")}>
             <SiteHeader />
-            <div className="flex-1">{children}</div>
+            <div className="min-w-0 flex-1">{children}</div>
           </SidebarInset>
         </SidebarProvider>
       </NewLeadProvider>

@@ -6,12 +6,12 @@ import { GripVertical } from "lucide-react";
 import { EntityCard } from "@/components/cards/EntityCard";
 import { PlannerIconBadge } from "@/components/planner/PlannerIconBadge";
 import {
-  formatEventTime,
   getEventEnd,
   getEventHeightPx,
   getEventTopPx,
   plannerTaskColor,
   plannerTaskCoverUrl,
+  plannerTaskDescription,
   plannerTaskSubtitle,
 } from "@/components/planner/planner-utils";
 import { useEventResize } from "@/components/planner/hooks/useEventResize";
@@ -31,8 +31,6 @@ type PlannerEventBlockProps = {
 
 function PlannerEventBlockVisual({
   event,
-  dueAt,
-  endsAt,
   completed,
   isSelected,
   layoutId,
@@ -40,8 +38,6 @@ function PlannerEventBlockVisual({
   className,
 }: {
   event: PlannerEventWithMeta;
-  dueAt: Date | null;
-  endsAt: Date | null;
   completed: boolean;
   isSelected?: boolean;
   layoutId?: boolean;
@@ -51,16 +47,16 @@ function PlannerEventBlockVisual({
   return (
     <EntityCard
       variant="task"
-      density="compact"
+      density="scheduled"
       layoutId={
         layoutId && !isSelected ? `planner-event-${event.id}` : undefined
       }
       title={event.title}
       coverUrl={plannerTaskCoverUrl(event)}
       cardColor={plannerTaskColor(event)}
+      description={plannerTaskDescription(event)}
       subtitle={plannerTaskSubtitle(event)}
-      meta={dueAt ? formatEventTime(dueAt) : null}
-      leading={<PlannerIconBadge icon={event.icon} className="size-4" />}
+      leading={<PlannerIconBadge icon={event.icon} className="size-3.5" />}
       selected={isSelected}
       completed={completed}
       className={className}
@@ -103,11 +99,15 @@ function PlannerEventBlockDraggable({
       ? {
           top: getEventTopPx(dueAt),
           height: heightPx,
-          transform: transform
-            ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
-            : undefined,
+          opacity: isDragging ? 0 : 1,
+          transform:
+            !isDragging && transform
+              ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+              : undefined,
         }
-      : undefined;
+      : isDragging
+        ? { opacity: 0 }
+        : undefined;
 
   function handleCardClick(e: React.MouseEvent) {
     e.stopPropagation();
@@ -119,17 +119,11 @@ function PlannerEventBlockDraggable({
     <>
       <PlannerEventBlockVisual
         event={event}
-        dueAt={dueAt}
-        endsAt={endsAt}
         completed={completed}
         isSelected={isSelected}
         layoutId={useLayout && !isDragging}
         compact={compact}
-        className={cn(
-          "h-full",
-          isDragging && "opacity-40",
-          compact && "relative h-auto",
-        )}
+        className={cn("h-full", compact && "relative h-auto")}
       />
       {!completed && dueAt && endsAt && !compact && (
         <div
@@ -204,8 +198,6 @@ export function PlannerEventBlock({
       >
         <PlannerEventBlockVisual
           event={props.event}
-          dueAt={dueAt}
-          endsAt={endsAt}
           completed={completed}
           isSelected={props.isSelected}
           layoutId={props.layoutId}

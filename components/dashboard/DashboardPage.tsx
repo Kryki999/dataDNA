@@ -20,7 +20,7 @@ export function DashboardPage({
       className={cn(
         PAGE_SHELL,
         wide && "max-w-6xl",
-        full && "max-w-[min(100%,90rem)]",
+        full && "max-w-[min(100%,90rem)] min-w-0",
         className,
       )}
     >

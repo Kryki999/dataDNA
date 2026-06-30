@@ -68,7 +68,6 @@ function PlannerBacklogCardVisual({
       onClick={onClick}
       className={cn(
         isSticky && "w-[200px] shrink-0",
-        isDragging && "opacity-60 shadow-xl",
       )}
     >
       {isMobile && onSchedule ? (
@@ -113,9 +112,11 @@ function PlannerBacklogCardDraggable(props: PlannerBacklogCardProps) {
     <div
       ref={setNodeRef}
       style={{
-        transform: transform
-          ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
-          : undefined,
+        opacity: isDragging ? 0 : 1,
+        transform:
+          !isDragging && transform
+            ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+            : undefined,
       }}
       className={cn(
         "cursor-grab touch-none active:cursor-grabbing",

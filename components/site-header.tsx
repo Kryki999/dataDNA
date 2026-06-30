@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Search } from "lucide-react";
 import { useCrmModals } from "@/components/crm/CrmModalsProvider";
 import { Button } from "@/components/ui/button";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { getNavTitle } from "@/lib/dashboard-nav";
 import { SURFACE_HEADER } from "@/lib/ui-patterns";
 import { cn } from "@/lib/utils";
@@ -16,14 +17,20 @@ export function SiteHeader() {
     <header
       data-slot="dashboard-header"
       className={cn(
-        "flex h-(--header-height) shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)",
+        "sticky top-0 z-30 flex h-(--header-height) shrink-0 items-center gap-2 border-b border-dna-border/30 backdrop-blur-sm transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)",
         SURFACE_HEADER,
       )}
     >
       <div className="flex w-full items-center justify-between gap-3 px-4 lg:px-6">
-        <h1 className="text-base font-medium text-foreground">
-          {getNavTitle(pathname)}
-        </h1>
+        <div className="flex min-w-0 items-center gap-2">
+          <SidebarTrigger
+            className="shrink-0 text-muted-foreground hover:bg-dna-inset hover:text-foreground md:hidden"
+            aria-label="Otwórz menu nawigacji"
+          />
+          <h1 className="truncate text-base font-medium text-foreground">
+            {getNavTitle(pathname)}
+          </h1>
+        </div>
         <Button
           variant="outline"
           size="sm"

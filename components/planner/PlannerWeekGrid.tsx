@@ -30,9 +30,8 @@ export function PlannerWeekGrid({
 }: PlannerWeekGridProps) {
   return (
     <div className={cn(FLAT_CONTAINER, "overflow-hidden p-0")}>
-      {/* Scroll strony, nie osobnego pudełka — naturalny flow z tablicą pod spodem */}
-      <div className="flex min-h-[420px]">
-        <div className="sticky top-(--header-height) z-30 w-14 shrink-0 self-start border-r border-dna-border/40 bg-dna-inset">
+      <div className="flex min-h-[420px] overflow-x-auto">
+        <div className="sticky top-(--header-height) z-20 w-14 shrink-0 self-start border-r border-dna-border/40 bg-dna-inset">
           <div className="h-14 border-b border-dna-border/40" />
           {GRID_HOURS.map((hour) => (
             <div

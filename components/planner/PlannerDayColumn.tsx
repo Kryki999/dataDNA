@@ -49,7 +49,7 @@ export function PlannerDayColumn({
     >
       <div
         className={cn(
-          "sticky top-(--header-height) z-20 flex h-14 flex-col items-center justify-center border-b border-dna-border/40 px-2",
+          "sticky top-(--header-height) z-10 flex h-14 flex-col items-center justify-center border-b border-dna-border/40 px-2",
           today ? "bg-primary/10" : "bg-dna-surface/80 backdrop-blur-sm",
         )}
       >

@@ -16,7 +16,7 @@ export type EntityCardAvatar = {
 
 export type EntityCardVariant = "tile" | "task";
 
-export type EntityCardDensity = "comfortable" | "compact";
+export type EntityCardDensity = "comfortable" | "compact" | "scheduled";
 
 export type EntityCardProps = {
   layoutId?: string;
@@ -209,8 +209,65 @@ export function EntityCard({
     </div>
   );
 
+  const taskCardScheduled = (
+    <div
+      className={cn(
+        "group relative flex h-full min-h-[56px] flex-col overflow-hidden rounded-xl border bg-gradient-to-b text-left transition-all",
+        colors.border,
+        colors.bg,
+        interactive && "cursor-pointer hover:brightness-110",
+        completed && "opacity-55",
+        className,
+      )}
+      {...interactiveProps}
+    >
+      {coverUrl ? (
+        <div className="relative h-[38%] min-h-[22px] max-h-12 shrink-0">
+          <Image
+            src={coverUrl}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="160px"
+          />
+          {leading ? (
+            <div className="absolute left-1.5 top-1.5">{leading}</div>
+          ) : null}
+        </div>
+      ) : leading ? (
+        <div className="flex shrink-0 items-center px-2 pt-1.5">{leading}</div>
+      ) : null}
+      <div className="flex min-h-0 flex-1 flex-col justify-center gap-0.5 px-2 py-1.5">
+        <p
+          className={cn(
+            CARD_TITLE,
+            "line-clamp-2 text-[13px] leading-snug",
+            completed && "line-through text-muted-foreground",
+          )}
+        >
+          {title}
+        </p>
+        {description ? (
+          <p className="line-clamp-2 text-[10px] leading-snug text-foreground/70">
+            {description}
+          </p>
+        ) : null}
+        {subtitle ? (
+          <p className="truncate text-[10px] font-medium text-foreground/60">
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
+      {children}
+    </div>
+  );
+
   const taskCard =
-    density === "compact" ? taskCardCompact : taskCardComfortable;
+    density === "compact"
+      ? taskCardCompact
+      : density === "scheduled"
+        ? taskCardScheduled
+        : taskCardComfortable;
 
   const tileCard = (
     <div
