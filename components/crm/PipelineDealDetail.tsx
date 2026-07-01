@@ -1,18 +1,20 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { MoreHorizontal, X } from "lucide-react";
+import { X } from "lucide-react";
 import { toast } from "sonner";
 import { ClientCardColorControl } from "@/components/cards/ClientCardColorControl";
 import { ClientTimelineFeed } from "@/components/crm/ClientTimelineFeed";
-import { ProjectKanban } from "@/components/crm/ProjectKanban";
+import { ScheduleNextStepButton } from "@/components/crm/ScheduleNextStepDialog";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +30,7 @@ import {
   PIPELINE_DEAL_STATUS_LABELS,
   type PipelineDealStatus,
 } from "@/lib/crm/pipeline-deals";
+import { DELIVERY_WORKFLOW_COPY, KANBAN_PRESETS } from "@/lib/crm/kor";
 import {
   DNA_SCROLLBAR,
   EYEBROW,
@@ -60,6 +63,9 @@ export function PipelineDealDetail({
   const [status, setStatus] = useState<PipelineDealStatus>(initial.status);
   const [noteDraft, setNoteDraft] = useState("");
   const [feedKey, setFeedKey] = useState(0);
+  const [pendingClose, setPendingClose] = useState<
+    "closed_won" | "closed_lost" | null
+  >(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -102,6 +108,7 @@ export function PipelineDealDetail({
   }
 
   function handleClose(next: "closed_won" | "closed_lost") {
+    setPendingClose(null);
     startTransition(async () => {
       const closed = await closePipelineDeal(deal.id, next);
       if (closed) {
@@ -112,6 +119,13 @@ export function PipelineDealDetail({
       }
     });
   }
+
+  const pendingCloseLabel =
+    pendingClose === "closed_won"
+      ? "Zrealizowano"
+      : pendingClose === "closed_lost"
+        ? "Koniec współpracy"
+        : null;
 
   function handleReactivate(targetStatus: PipelineDealStatus) {
     startTransition(async () => {
@@ -132,8 +146,6 @@ export function PipelineDealDetail({
 
   const isClosed =
     status === "closed_won" || status === "closed_lost";
-
-  const projectLeadId = deal.client.migratedFromLeadId ?? deal.clientId;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -161,25 +173,6 @@ export function PipelineDealDetail({
                 size="sm"
               />
             ) : null}
-            {!isClosed ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button variant="ghost" size="icon" className="size-8" />
-                  }
-                >
-                  <MoreHorizontal className="size-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleClose("closed_won")}>
-                    Zrealizowano
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleClose("closed_lost")}>
-                    Koniec współpracy
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
             <Button
               variant="ghost"
               size="icon"
@@ -199,7 +192,20 @@ export function PipelineDealDetail({
             Otwórz profil klienta
           </button>
         ) : null}
+        {!isClosed ? (
+          <ScheduleNextStepButton
+            dealId={deal.id}
+            dealTitle={deal.title}
+            onScheduled={() => setFeedKey((k) => k + 1)}
+          />
+        ) : null}
       </div>
+
+      {status === "closed_won" ? (
+        <div className="mx-5 mt-2 shrink-0 rounded-lg border border-dna-border/30 bg-dna-inset/50 px-3 py-2 text-xs text-muted-foreground">
+          {DELIVERY_WORKFLOW_COPY}
+        </div>
+      ) : null}
 
       {isClosed ? (
         <div className="mx-5 mt-3 shrink-0 space-y-3 rounded-xl border border-amber-500/25 bg-amber-500/5 p-3">
@@ -296,13 +302,69 @@ export function PipelineDealDetail({
               </button>
             ))}
           </div>
-          {status === "closed_won" ? (
-            <div className="rounded-lg border border-dna-border/25 bg-dna-inset p-2">
-              <ProjectKanban leadId={projectLeadId} />
+          <p className="text-xs text-muted-foreground">
+            {KANBAN_PRESETS.sales.userRule}
+          </p>
+          {!isClosed ? (
+            <div className="border-t border-dna-border/30 pt-4">
+              <p className="text-[11px] text-muted-foreground">Zamknij projekt</p>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                <button
+                  type="button"
+                  className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                  onClick={() => setPendingClose("closed_won")}
+                >
+                  Zrealizowano
+                </button>
+                <span className="text-dna-border/60" aria-hidden>
+                  ·
+                </span>
+                <button
+                  type="button"
+                  className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                  onClick={() => setPendingClose("closed_lost")}
+                >
+                  Koniec współpracy
+                </button>
+              </div>
             </div>
           ) : null}
         </TabsContent>
       </Tabs>
+
+      <Dialog
+        open={pendingClose !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingClose(null);
+        }}
+      >
+        <DialogContent showCloseButton className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Zamknąć projekt?</DialogTitle>
+            <DialogDescription>
+              {pendingCloseLabel} — „{deal.title}”. Karta zniknie z Kanbanu,
+              historia zostanie u klienta.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="border-t-0 bg-transparent p-0 pt-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPendingClose(null)}
+              disabled={isPending}
+            >
+              Anuluj
+            </Button>
+            <Button
+              type="button"
+              onClick={() => pendingClose && handleClose(pendingClose)}
+              disabled={isPending || !pendingClose}
+            >
+              {pendingCloseLabel}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="shrink-0 border-t border-dna-border bg-dna-surface p-4">
         <Button

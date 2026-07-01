@@ -17,6 +17,7 @@ export function NavMain({
   items: {
     title: string;
     href: string;
+    subtitle?: string;
     icon?: React.ReactNode;
     isActive?: boolean;
   }[];
@@ -28,7 +29,11 @@ export function NavMain({
           {items.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
-                tooltip={item.title}
+                tooltip={
+                  item.subtitle
+                    ? `${item.title} — ${item.subtitle}`
+                    : item.title
+                }
                 isActive={item.isActive}
                 className={
                   item.isActive

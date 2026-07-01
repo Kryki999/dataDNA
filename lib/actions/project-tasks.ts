@@ -1,5 +1,7 @@
 "use server";
 
+/** @deprecated Delivery tasks belong in Planner (calendar_events). Legacy lead project board only. */
+
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { projectTasks } from "@/lib/db/schema";

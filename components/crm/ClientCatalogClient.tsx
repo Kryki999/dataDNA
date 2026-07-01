@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { MotionDetailOverlay } from "@/components/ui/motion-detail-overlay";
 import { scoreClientMatch } from "@/lib/crm/client-name";
 import type { Client } from "@/lib/crm/clients";
+import { MODULE_SUBTITLES } from "@/lib/crm/kor";
 import { EYEBROW, INPUT_SURFACE } from "@/lib/ui-patterns";
 
 type ClientCatalogClientProps = {
@@ -49,7 +50,7 @@ export function ClientCatalogClient({ clients: initial }: ClientCatalogClientPro
         <div>
           <p className={EYEBROW}>Baza klientów</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Kolor karty ustawisz kropką na karcie lub w profilu klienta
+            {MODULE_SUBTITLES.baza}
           </p>
         </div>
         <div className="relative max-w-xl">

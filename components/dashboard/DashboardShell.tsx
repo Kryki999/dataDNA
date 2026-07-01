@@ -14,10 +14,11 @@ type DashboardShellProps = {
     email: string;
     avatarUrl?: string | null;
   };
+  enabledModules?: import("@/lib/dashboard-nav").DashboardNavId[];
   children: React.ReactNode;
 };
 
-export function DashboardShell({ user, children }: DashboardShellProps) {
+export function DashboardShell({ user, enabledModules, children }: DashboardShellProps) {
   return (
     <CrmModalsProvider>
       <NewLeadProvider>
@@ -29,7 +30,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
             } as React.CSSProperties
           }
         >
-          <AppSidebar variant="inset" user={user} />
+          <AppSidebar variant="inset" user={user} enabledModules={enabledModules} />
           <SidebarInset className={cn(SURFACE_CANVAS, "min-h-0 min-w-0 overflow-x-hidden shadow-none")}>
             <SiteHeader />
             <div className="min-w-0 flex-1">{children}</div>

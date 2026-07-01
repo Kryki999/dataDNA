@@ -3,13 +3,15 @@
 import { del, put } from "@vercel/blob";
 import { and, asc, eq, gte, isNotNull, isNull, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { ensureKorSchema } from "@/lib/db/ensure-kor-schema";
 import {
   calendarEventAttachments,
   calendarEvents,
   clients,
   leads,
+  pipelineDeals,
 } from "@/lib/db/schema";
-import { addClientNote } from "@/lib/actions/notes";
+import { addClientNote, addSystemNote } from "@/lib/actions/notes";
 import {
   plannerAttachmentExtension,
   validatePlannerAttachment,
@@ -53,6 +55,7 @@ async function syncLeadFollowUp(leadId: string, dueAt: Date | null) {
 }
 
 export async function getPlannerData(from: Date, to: Date) {
+  await ensureKorSchema();
   const organizationId = await getCurrentOrganizationId();
 
   const scheduledRows = await db
@@ -61,9 +64,14 @@ export async function getPlannerData(from: Date, to: Date) {
       clientName: clients.name,
       clientCompany: clients.company,
       clientCardColor: clients.cardColor,
+      pipelineDealTitle: pipelineDeals.title,
     })
     .from(calendarEvents)
     .leftJoin(clients, eq(calendarEvents.clientId, clients.id))
+    .leftJoin(
+      pipelineDeals,
+      eq(calendarEvents.pipelineDealId, pipelineDeals.id),
+    )
     .where(
       and(
         eq(calendarEvents.organizationId, organizationId),
@@ -80,9 +88,14 @@ export async function getPlannerData(from: Date, to: Date) {
       clientName: clients.name,
       clientCompany: clients.company,
       clientCardColor: clients.cardColor,
+      pipelineDealTitle: pipelineDeals.title,
     })
     .from(calendarEvents)
     .leftJoin(clients, eq(calendarEvents.clientId, clients.id))
+    .leftJoin(
+      pipelineDeals,
+      eq(calendarEvents.pipelineDealId, pipelineDeals.id),
+    )
     .where(
       and(
         eq(calendarEvents.organizationId, organizationId),
@@ -119,6 +132,7 @@ export async function getPlannerData(from: Date, to: Date) {
     clientName: row.clientName,
     clientCompany: row.clientCompany,
     clientCardColor: row.clientCardColor,
+    pipelineDealTitle: row.pipelineDealTitle,
     attachments: attachmentsByEvent.get(row.event.id) ?? [],
   });
 
@@ -291,7 +305,9 @@ export async function completeCalendarEvent(eventId: string) {
     .returning();
 
   if (event?.clientId) {
-    await addClientNote(event.clientId, `Wykonano: ${event.title}`);
+    await addClientNote(event.clientId, `Wykonano: ${event.title}`, {
+      dealId: event.pipelineDealId,
+    });
   } else if (event?.leadId) {
     await syncLeadFollowUp(event.leadId, null);
     const clientId = await getClientIdForLead(event.leadId, organizationId);
@@ -378,9 +394,11 @@ export async function createPlannerEvent(input: {
   endsAt?: Date | null;
   leadId?: string | null;
   clientId?: string | null;
+  pipelineDealId?: string | null;
   icon?: PlannerIcon;
   description?: string;
 }) {
+  await ensureKorSchema();
   const organizationId = await getCurrentOrganizationId();
   const title = input.title.trim();
   if (!title) throw new Error("Tytuł jest wymagany");
@@ -395,6 +413,28 @@ export async function createPlannerEvent(input: {
 
   let clientId = input.clientId ?? null;
   let leadId = input.leadId ?? null;
+  let pipelineDealId = input.pipelineDealId ?? null;
+
+  if (pipelineDealId) {
+    const [deal] = await db
+      .select({
+        id: pipelineDeals.id,
+        clientId: pipelineDeals.clientId,
+      })
+      .from(pipelineDeals)
+      .where(
+        and(
+          eq(pipelineDeals.id, pipelineDealId),
+          eq(pipelineDeals.organizationId, organizationId),
+        ),
+      )
+      .limit(1);
+
+    if (!deal) throw new Error("Nie znaleziono projektu");
+    clientId = deal.clientId;
+    leadId = null;
+  }
+
   if (!clientId && leadId) {
     clientId = await getClientIdForLead(leadId, organizationId);
     if (clientId) leadId = null;
@@ -406,6 +446,7 @@ export async function createPlannerEvent(input: {
       organizationId,
       leadId,
       clientId,
+      pipelineDealId,
       title,
       description: input.description?.trim() ?? "",
       icon: input.icon ?? "task",
@@ -433,6 +474,7 @@ export async function updatePlannerEvent(
     endsAt?: Date | null;
     leadId?: string | null;
     clientId?: string | null;
+    pipelineDealId?: string | null;
     icon?: PlannerIcon;
   },
 ) {
@@ -449,6 +491,25 @@ export async function updatePlannerEvent(
   if (patch.clientId !== undefined) {
     updates.clientId = patch.clientId;
     if (patch.clientId) updates.leadId = null;
+  }
+  if (patch.pipelineDealId !== undefined) {
+    updates.pipelineDealId = patch.pipelineDealId;
+    if (patch.pipelineDealId) {
+      const [deal] = await db
+        .select({ clientId: pipelineDeals.clientId })
+        .from(pipelineDeals)
+        .where(
+          and(
+            eq(pipelineDeals.id, patch.pipelineDealId),
+            eq(pipelineDeals.organizationId, organizationId),
+          ),
+        )
+        .limit(1);
+      if (deal) {
+        updates.clientId = deal.clientId;
+        updates.leadId = null;
+      }
+    }
   }
   if (patch.leadId !== undefined) {
     updates.leadId = patch.leadId;
@@ -605,6 +666,72 @@ export async function uploadPlannerAttachment(eventId: string, formData: FormDat
 
   revalidateDashboard();
   return attachment;
+}
+
+/**
+ * Zaplanuj następny krok projektu — sync deal.nextFollowUpAt + wpis w Plannerze + notatka.
+ */
+export async function schedulePipelineDealFollowUp(
+  dealId: string,
+  input: {
+    title?: string;
+    dueAt: Date;
+    endsAt?: Date;
+    description?: string;
+  },
+) {
+  const organizationId = await getCurrentOrganizationId();
+
+  const [deal] = await db
+    .select({
+      id: pipelineDeals.id,
+      clientId: pipelineDeals.clientId,
+      title: pipelineDeals.title,
+    })
+    .from(pipelineDeals)
+    .where(
+      and(
+        eq(pipelineDeals.id, dealId),
+        eq(pipelineDeals.organizationId, organizationId),
+      ),
+    )
+    .limit(1);
+
+  if (!deal) throw new Error("Nie znaleziono projektu");
+
+  const dueAt = input.dueAt;
+  const endsAt =
+    input.endsAt ?? new Date(dueAt.getTime() + DEFAULT_EVENT_DURATION_MS);
+  const title = input.title?.trim() || `Następny krok: ${deal.title}`;
+
+  const event = await createPlannerEvent({
+    title,
+    dueAt,
+    endsAt,
+    clientId: deal.clientId,
+    pipelineDealId: deal.id,
+    icon: "follow_up",
+    description: input.description,
+  });
+
+  await db
+    .update(pipelineDeals)
+    .set({ nextFollowUpAt: dueAt, updatedAt: new Date() })
+    .where(eq(pipelineDeals.id, deal.id));
+
+  await addSystemNote(
+    deal.clientId,
+    `Zaplanowano w Plannerze: ${title}`,
+    {
+      dealId: deal.id,
+      event: "follow_up_scheduled",
+      dealTitle: deal.title,
+      plannerEventId: event.id,
+    },
+  );
+
+  revalidateDashboard();
+  return event;
 }
 
 export async function deletePlannerAttachment(attachmentId: string) {

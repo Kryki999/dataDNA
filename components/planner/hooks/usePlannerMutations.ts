@@ -46,6 +46,7 @@ export function usePlannerMutations({
           clientName: null,
           clientCompany: null,
           clientCardColor: null,
+          pipelineDealTitle: null,
         };
       }
       const client = clients.find((c) => c.id === clientId);
@@ -53,6 +54,7 @@ export function usePlannerMutations({
         clientName: client?.name ?? null,
         clientCompany: client?.company ?? null,
         clientCardColor: client?.cardColor ?? null,
+        pipelineDealTitle: null,
       };
     },
     [clients],
@@ -143,6 +145,7 @@ export function usePlannerMutations({
         organizationId: "",
         leadId: null,
         clientId: clientId ?? null,
+        pipelineDealId: null,
         title,
         description: "",
         icon,
@@ -174,6 +177,7 @@ export function usePlannerMutations({
                     ...created,
                     id: created.id,
                     ...meta,
+                    pipelineDealTitle: null,
                     attachments: [],
                   }
                 : e,
@@ -204,6 +208,7 @@ export function usePlannerMutations({
         organizationId: "",
         leadId: null,
         clientId: clientId ?? null,
+        pipelineDealId: null,
         title,
         description: "",
         icon,
@@ -239,6 +244,7 @@ export function usePlannerMutations({
                     dueAt: created.dueAt ? new Date(created.dueAt) : dueAt,
                     endsAt: created.endsAt ? new Date(created.endsAt) : end,
                     ...meta,
+                    pipelineDealTitle: null,
                     attachments: [],
                   }
                 : e,

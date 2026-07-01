@@ -128,6 +128,12 @@ export function plannerTaskColor(event: PlannerEventWithMeta) {
 }
 
 export function plannerTaskSubtitle(event: PlannerEventWithMeta) {
+  if (event.pipelineDealTitle) {
+    const client = clientLabel(event);
+    return client
+      ? `${event.pipelineDealTitle} · ${client}`
+      : event.pipelineDealTitle;
+  }
   return clientLabel(event);
 }
 

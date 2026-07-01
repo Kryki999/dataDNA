@@ -18,26 +18,19 @@ import {
   type PipelineDealWithMeta,
 } from "@/lib/actions/pipeline-deals";
 import {
-  CLOSED_PIPELINE_DEAL_STATUSES,
+  ACTIVE_PIPELINE_DEAL_STATUSES,
   PIPELINE_DEAL_COLUMNS,
   type PipelineDealStatus,
 } from "@/lib/crm/pipeline-deals";
 import type { CurrentUser } from "@/lib/crm/current-user";
 import { PipelineColumn, PipelineColumnStatic } from "./PipelineColumn";
 import { PipelineCardOverlay } from "./PipelineCard";
-import {
-  PipelineOutcomeZone,
-  PipelineOutcomeZoneStatic,
-} from "./PipelineOutcomeZone";
 import { useMounted } from "@/hooks/use-mounted";
-
-const OUTCOME_IDS = CLOSED_PIPELINE_DEAL_STATUSES;
 
 type PipelineBoardProps = {
   deals: PipelineDealWithMeta[];
   currentUser?: CurrentUser;
   onOpenDeal: (deal: PipelineDealWithMeta) => void;
-  onDealClosed: (dealId: string) => void;
   onRefresh: () => void;
   selectedDealId?: string | null;
 };
@@ -46,7 +39,6 @@ export function PipelineBoard({
   deals: initialDeals,
   currentUser,
   onOpenDeal,
-  onDealClosed,
   onRefresh,
   selectedDealId,
 }: PipelineBoardProps) {
@@ -84,41 +76,27 @@ export function PipelineBoard({
     if (!overId) return;
 
     const nextStatus = String(overId) as PipelineDealStatus;
-    const valid = [
-      ...PIPELINE_DEAL_COLUMNS.map((c) => c.id),
-      ...OUTCOME_IDS,
-    ];
-    if (!valid.includes(nextStatus)) return;
+    if (
+      !(ACTIVE_PIPELINE_DEAL_STATUSES as readonly PipelineDealStatus[]).includes(
+        nextStatus,
+      )
+    ) {
+      return;
+    }
 
     const deal = deals.find((item) => item.id === dealId);
     if (!deal || deal.status === nextStatus) return;
 
-    const isClosing = OUTCOME_IDS.includes(
-      nextStatus as (typeof OUTCOME_IDS)[number],
+    setDeals((current) =>
+      current.map((item) =>
+        item.id === dealId ? { ...item, status: nextStatus } : item,
+      ),
     );
-
-    if (isClosing) {
-      setDeals((current) => current.filter((item) => item.id !== dealId));
-    } else {
-      setDeals((current) =>
-        current.map((item) =>
-          item.id === dealId ? { ...item, status: nextStatus } : item,
-        ),
-      );
-    }
 
     startTransition(async () => {
       try {
         await updatePipelineDealStatus(dealId, nextStatus);
-        if (nextStatus === "closed_won") {
-          toast.success("Projekt zrealizowany");
-          onDealClosed(dealId);
-        } else if (nextStatus === "closed_lost") {
-          toast.success("Współpraca zakończona");
-          onDealClosed(dealId);
-        } else {
-          toast.success("Etap zaktualizowany");
-        }
+        toast.success("Etap zaktualizowany");
       } catch {
         toast.error("Nie udało się zmienić etapu");
         const refreshed = await getActivePipelineDealsWithMeta();
@@ -128,41 +106,23 @@ export function PipelineBoard({
   }
 
   const Column = mounted ? PipelineColumn : PipelineColumnStatic;
-  const OutcomeZone = mounted ? PipelineOutcomeZone : PipelineOutcomeZoneStatic;
 
   const board = (
-    <>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {columns.map((column) => (
-          <Column
-            key={column.id}
-            id={column.id}
-            label={column.label}
-            accentColor={column.accent}
-            deals={column.deals}
-            currentUser={currentUser}
-            onOpenDeal={onOpenDeal}
-            onDealCreated={onRefresh}
-            selectedDealId={selectedDealId}
-          />
-        ))}
-      </div>
-
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <OutcomeZone
-          id="closed_lost"
-          label="Koniec współpracy"
-          description="Karta znika z tablicy — profil zostaje w bazie"
-          variant="lost"
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {columns.map((column) => (
+        <Column
+          key={column.id}
+          id={column.id}
+          label={column.label}
+          accentColor={column.accent}
+          deals={column.deals}
+          currentUser={currentUser}
+          onOpenDeal={onOpenDeal}
+          onDealCreated={onRefresh}
+          selectedDealId={selectedDealId}
         />
-        <OutcomeZone
-          id="closed_won"
-          label="Zrealizowano"
-          description="Projekt zamknięty — historia w profilu klienta"
-          variant="won"
-        />
-      </div>
-    </>
+      ))}
+    </div>
   );
 
   if (!mounted) return board;

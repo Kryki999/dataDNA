@@ -18,6 +18,7 @@ export type PlannerEventWithMeta = PlannerEventRow & {
   clientName: string | null;
   clientCompany: string | null;
   clientCardColor: string | null;
+  pipelineDealTitle: string | null;
   attachments: PlannerAttachmentRow[];
 };
 

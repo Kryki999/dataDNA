@@ -6,6 +6,8 @@ import { Dna } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import { DASHBOARD_NAV } from "@/lib/dashboard-nav";
+import { filterNavByModules } from "@/lib/organization-modules";
+import type { DashboardNavId } from "@/lib/dashboard-nav";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -20,10 +22,12 @@ import {
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   user: { name: string; email: string; avatarUrl?: string | null };
+  enabledModules?: DashboardNavId[];
 };
 
-export function AppSidebar({ user, ...props }: AppSidebarProps) {
+export function AppSidebar({ user, enabledModules, ...props }: AppSidebarProps) {
   const pathname = usePathname();
+  const navItems = filterNavByModules(enabledModules ?? DASHBOARD_NAV.map((n) => n.id));
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -75,9 +79,10 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain
-          items={DASHBOARD_NAV.map((item) => ({
+          items={navItems.map((item) => ({
             title: item.title,
             href: item.href,
+            subtitle: item.subtitle,
             icon: <item.icon className="size-4" />,
             isActive:
               pathname === item.href || pathname.startsWith(`${item.href}/`),

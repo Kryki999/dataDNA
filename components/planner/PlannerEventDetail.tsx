@@ -338,6 +338,11 @@ export function PlannerEventDetail({
               {clientLabel(event)}
             </p>
           ) : null}
+          {event.pipelineDealTitle ? (
+            <p className="text-xs text-muted-foreground">
+              Projekt: {event.pipelineDealTitle}
+            </p>
+          ) : null}
 
           {event.dueAt ? (
             <div className="space-y-2">

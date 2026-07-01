@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * @deprecated Realizacja po wygranym projekcie jest w Plannerze (KOR Wariant A).
+ * Zachowane dla legacy DealDetail — nie używać w nowym UI pipeline.
+ */
+
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import {
   DndContext,

@@ -2,6 +2,7 @@ import { index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-c
 import { organizations } from "./organizations";
 import { clients } from "./clients";
 import { leads } from "./leads";
+import { pipelineDeals } from "./pipeline-deals";
 import {
   calendarEventSourceEnum,
   calendarEventStatusEnum,
@@ -17,6 +18,9 @@ export const calendarEvents = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
     leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
     clientId: uuid("client_id").references(() => clients.id, {
+      onDelete: "set null",
+    }),
+    pipelineDealId: uuid("pipeline_deal_id").references(() => pipelineDeals.id, {
       onDelete: "set null",
     }),
     title: text("title").notNull(),
@@ -41,6 +45,7 @@ export const calendarEvents = pgTable(
     ),
     index("calendar_events_lead_idx").on(table.leadId),
     index("calendar_events_client_idx").on(table.clientId),
+    index("calendar_events_pipeline_deal_idx").on(table.pipelineDealId),
     index("calendar_events_org_status_idx").on(
       table.organizationId,
       table.status,

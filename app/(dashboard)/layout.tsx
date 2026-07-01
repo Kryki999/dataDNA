@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { auth } from "@/lib/auth";
+import { getOrganizationEnabledModules } from "@/lib/actions/organization";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -41,6 +42,7 @@ export default async function DashboardLayout({
         email: session.user.email,
         avatarUrl: avatarUrl ?? null,
       }}
+      enabledModules={await getOrganizationEnabledModules()}
     >
       {children}
     </DashboardShell>

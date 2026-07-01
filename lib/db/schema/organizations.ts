@@ -1,11 +1,24 @@
-import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { planEnum, userRoleEnum } from "./enums";
+
+const DEFAULT_ENABLED_MODULES_JSON = [
+  "baza",
+  "klienci",
+  "kalendarz",
+  "profil",
+  "zasiegi",
+  "zyski",
+] as const;
 
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   plan: planEnum("plan").notNull().default("personal"),
+  enabledModules: jsonb("enabled_modules")
+    .$type<readonly string[]>()
+    .notNull()
+    .default([...DEFAULT_ENABLED_MODULES_JSON]),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

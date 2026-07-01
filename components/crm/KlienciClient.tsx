@@ -10,6 +10,7 @@ import { getActivePipelineDealsWithMeta, type PipelineDealWithMeta } from "@/lib
 import { isActivePipelineDeal } from "@/lib/crm/pipeline-deals";
 import type { CurrentUser } from "@/lib/crm/current-user";
 import { useCrmModals } from "@/components/crm/CrmModalsProvider";
+import { KANBAN_PRESETS, MODULE_SUBTITLES } from "@/lib/crm/kor";
 import { EYEBROW } from "@/lib/ui-patterns";
 
 type KlienciClientProps = {
@@ -65,9 +66,9 @@ export function KlienciClient({
   return (
     <DashboardPage full>
       <header className="mb-6">
-        <p className={EYEBROW}>Pipeline sprzedaży</p>
+        <p className={EYEBROW}>Projekty</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Aktywne projekty — kliknij + i wpisz nazwę
+          {MODULE_SUBTITLES.klienci}. {KANBAN_PRESETS.sales.userRule}
         </p>
       </header>
 
@@ -76,7 +77,6 @@ export function KlienciClient({
           deals={deals}
           currentUser={currentUser}
           onOpenDeal={handleOpenDeal}
-          onDealClosed={handleDealClosed}
           onRefresh={refreshDeals}
           selectedDealId={sheetOpen ? selectedDeal?.id : null}
         />

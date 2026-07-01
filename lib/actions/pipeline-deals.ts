@@ -291,6 +291,21 @@ export async function updatePipelineDeal(
   const organizationId = await getCurrentOrganizationId();
   const now = new Date();
 
+  const [previous] = await db
+    .select({
+      status: pipelineDeals.status,
+      title: pipelineDeals.title,
+      clientId: pipelineDeals.clientId,
+    })
+    .from(pipelineDeals)
+    .where(
+      and(
+        eq(pipelineDeals.id, dealId),
+        eq(pipelineDeals.organizationId, organizationId),
+      ),
+    )
+    .limit(1);
+
   const statusPatch: Partial<typeof pipelineDeals.$inferInsert> = {};
   if (input.status !== undefined) {
     statusPatch.status = input.status;
@@ -320,6 +335,25 @@ export async function updatePipelineDeal(
       ),
     )
     .returning();
+
+  if (
+    deal &&
+    previous &&
+    input.status !== undefined &&
+    input.status !== previous.status
+  ) {
+    await addSystemNote(
+      deal.clientId,
+      `Projekt „${deal.title}” → ${PIPELINE_DEAL_STATUS_LABELS[input.status]}`,
+      {
+        dealId: deal.id,
+        event: "status_changed",
+        dealTitle: deal.title,
+        fromStatus: previous.status,
+        toStatus: input.status,
+      },
+    );
+  }
 
   revalidateDashboard();
   return deal ?? null;
